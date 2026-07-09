@@ -8,6 +8,10 @@
                 'admin.view-users',
                 'admin.users.*',
             );
+            $isTasksActive = request()->routeIs(
+                'admin.tasks.*',
+                'admin.task-categories.*',
+            );
         @endphp
 
         <div class="sidenav-menu-heading">Core</div>
@@ -36,6 +40,36 @@
                 <a class="nav-link {{ request()->routeIs('admin.view-users', 'admin.users.edit') ? 'active' : '' }}"
                     href="{{ route('admin.view-users') }}">
                     View Users
+                </a>
+            </nav>
+        </div>
+
+        <a class="nav-link {{ $isTasksActive ? '' : 'collapsed' }}" href="javascript:void(0);" data-bs-toggle="collapse"
+            data-bs-target="#collapseTasks" aria-expanded="{{ $isTasksActive ? 'true' : 'false' }}"
+            aria-controls="collapseTasks">
+            <div class="nav-link-icon"><i data-feather="layers"></i></div>
+            Tasks
+            <div class="sidenav-collapse-arrow">
+                <i class="fas fa-angle-down"></i>
+            </div>
+        </a>
+        <div class="collapse {{ $isTasksActive ? 'show' : '' }}" id="collapseTasks" data-bs-parent="#accordionSidenav">
+            <nav class="sidenav-menu-nested nav accordion" id="accordionSidenavTaskPages">
+                <a class="nav-link {{ request()->routeIs('admin.tasks.board') ? 'active' : '' }}"
+                    href="{{ route('admin.tasks.board') }}">
+                    Board
+                </a>
+                <a class="nav-link {{ request()->routeIs('admin.tasks.table') ? 'active' : '' }}"
+                    href="{{ route('admin.tasks.table') }}">
+                    Table View
+                </a>
+                <a class="nav-link {{ request()->routeIs('admin.tasks.archived') ? 'active' : '' }}"
+                    href="{{ route('admin.tasks.archived') }}">
+                    Archived Tasks
+                </a>
+                <a class="nav-link {{ request()->routeIs('admin.task-categories.index') ? 'active' : '' }}"
+                    href="{{ route('admin.task-categories.index') }}">
+                    Categories
                 </a>
             </nav>
         </div>
