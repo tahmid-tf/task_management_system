@@ -98,6 +98,9 @@
                                                         </div>
                                                     @endif
                                                 </div>
+                                                <div class="small text-muted mt-2">
+                                                    Assigned by: {{ $task->creator?->name ?? 'Unknown' }}
+                                                </div>
                                                 @if ($canManageTasks)
                                                     <div class="d-flex flex-wrap gap-2 mt-3">
                                                         <a href="{{ route('admin.tasks.edit', $task) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
@@ -320,6 +323,7 @@
                                     <div class="list-group-item"><strong>Status:</strong> ${task.status}</div>
                                     <div class="list-group-item"><strong>Priority:</strong> ${task.priority}</div>
                                     <div class="list-group-item"><strong>Category:</strong> ${task.category?.name || '-'}</div>
+                                    <div class="list-group-item"><strong>Assigned By:</strong> ${task.assigned_by?.name || task.creator?.name || '-'}</div>
                                     <div class="list-group-item"><strong>Assignee:</strong> ${task.assignee?.name || '-'}</div>
                                     <div class="list-group-item"><strong>Due Date:</strong> ${task.due_date || '-'}</div>
                                 </div>

@@ -54,14 +54,33 @@
                                         @endforeach
                                     </td>
                                     <td class="text-end">
-                                        <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-primary js-task-details"
-                                                data-id="{{ $task->id }}">View</button>
+                                        <div class="d-flex flex-column gap-2 align-items-end">
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary js-task-details"
+                                                    data-id="{{ $task->id }}">View</button>
+                                                @if ($canManageTasks)
+                                                    <a class="btn btn-outline-secondary"
+                                                        href="{{ route('admin.tasks.edit', $task) }}">Edit</a>
+                                                    <button class="btn btn-outline-dark js-task-archive"
+                                                        data-id="{{ $task->id }}">Archive</button>
+                                                @endif
+                                            </div>
+
                                             @if ($canManageTasks)
-                                                <a class="btn btn-outline-secondary"
-                                                    href="{{ route('admin.tasks.edit', $task) }}">Edit</a>
-                                                <button class="btn btn-outline-dark js-task-archive"
-                                                    data-id="{{ $task->id }}">Archive</button>
+                                                <select class="form-select form-select-sm js-task-status-change"
+                                                    data-id="{{ $task->id }}"
+                                                    data-category-id="{{ $task->task_category_id }}"
+                                                    data-position="{{ $task->position }}"
+                                                    style="max-width: 180px;">
+                                                    @if (!in_array($task->status, ['todo', 'in_progress', 'done'], true))
+                                                        <option value="{{ $task->status }}" selected disabled>
+                                                            {{ ucfirst(str_replace('_', ' ', $task->status)) }} (Current)
+                                                        </option>
+                                                    @endif
+                                                    <option value="todo" @selected($task->status === 'todo')>To Do</option>
+                                                    <option value="in_progress" @selected($task->status === 'in_progress')>In Progress</option>
+                                                    <option value="done" @selected($task->status === 'done')>Done</option>
+                                                </select>
                                             @endif
                                         </div>
                                     </td>
@@ -96,6 +115,10 @@
                 order: [],
             });
 
+            $('.js-task-status-change').each(function () {
+                $(this).data('previous', $(this).val());
+            });
+
             $(document).on('click', '.js-task-details', function () {
                 $.get('{{ url('/admin/tasks') }}/' + $(this).data('id') + '/details', function (response) {
                     const task = response.task;
@@ -110,6 +133,7 @@
                                 <div class="list-group">
                                     <div class="list-group-item"><strong>Status:</strong> ${task.status}</div>
                                     <div class="list-group-item"><strong>Priority:</strong> ${task.priority}</div>
+                                    <div class="list-group-item"><strong>Assigned By:</strong> ${task.assigned_by?.name || task.creator?.name || '-'}</div>
                                     <div class="list-group-item"><strong>Due Date:</strong> ${task.due_date || '-'}</div>
                                     <div class="list-group-item"><strong>Assignee:</strong> ${task.assignee?.name || '-'}</div>
                                 </div>
@@ -140,6 +164,43 @@
                         .fail(function () {
                             Swal.fire('Error', 'Unable to archive task.', 'error');
                         });
+                });
+            });
+
+            $(document).on('change', '.js-task-status-change', function () {
+                const select = $(this);
+                const taskId = select.data('id');
+                const status = select.val();
+                const position = select.data('position');
+                const categoryId = select.data('category-id');
+
+                Swal.fire({
+                    title: 'Change task status?',
+                    text: `Move this task to ${select.find('option:selected').text()}?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Change'
+                }).then(function (result) {
+                    if (!result.isConfirmed) {
+                        select.val(select.data('previous') || select.find('option:first').val());
+                        return;
+                    }
+
+                    $.ajax({
+                        url: '{{ url('/admin/tasks') }}/' + taskId + '/move',
+                        method: 'PATCH',
+                        data: {
+                            status: status,
+                            position: position,
+                            category_id: categoryId
+                        }
+                    }).done(function (response) {
+                        select.data('previous', status);
+                        Swal.fire('Success', response.message, 'success');
+                    }).fail(function (xhr) {
+                        select.val(select.data('previous') || select.find('option:first').val());
+                        Swal.fire('Error', xhr.responseJSON?.message || 'Unable to change task status.', 'error');
+                    });
                 });
             });
         });

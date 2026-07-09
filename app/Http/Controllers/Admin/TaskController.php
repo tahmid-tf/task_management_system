@@ -25,11 +25,7 @@ class TaskController extends Controller
         'backlog'     => 'Backlog',
         'todo'        => 'To Do',
         'in_progress' => 'In Progress',
-        'review'      => 'Review',
-        'testing'     => 'Testing',
         'done'        => 'Done',
-        'blocked'     => 'Blocked',
-        'cancelled'   => 'Cancelled',
     ];
 
     private const PRIORITIES = [
@@ -452,6 +448,7 @@ class TaskController extends Controller
             'archived'      => (bool) $task->archived_at,
             'category'      => $task->category?->only(['id', 'name', 'slug']),
             'creator'       => $task->creator?->only(['id', 'name', 'email', 'image']),
+            'assigned_by'   => $task->creator?->only(['id', 'name', 'email', 'image']),
             'assignee'      => $task->assignee?->only(['id', 'name', 'email', 'image']),
             'labels'        => $task->labels->map(fn ($label) => $label->only(['id', 'name', 'slug', 'color']))->values(),
             'comments'      => $task->comments?->map(fn ($comment) => [

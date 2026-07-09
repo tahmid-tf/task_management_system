@@ -107,6 +107,7 @@
                                 <div class="list-group">
                                     <div class="list-group-item"><strong>Status:</strong> ${task.status}</div>
                                     <div class="list-group-item"><strong>Priority:</strong> ${task.priority}</div>
+                                    <div class="list-group-item"><strong>Assigned By:</strong> ${task.assigned_by?.name || task.creator?.name || '-'}</div>
                                     <div class="list-group-item"><strong>Due Date:</strong> ${task.due_date || '-'}</div>
                                     <div class="list-group-item"><strong>Assignee:</strong> ${task.assignee?.name || '-'}</div>
                                 </div>
