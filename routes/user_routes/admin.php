@@ -18,6 +18,7 @@ Route::middleware(['auth', 'verified', 'role:Admin'])->prefix('admin')->group(fu
 Route::middleware(['auth', 'verified', 'role:Admin|Team Member|Viewer'])->prefix('admin')->group(function () {
     Route::get('/tasks', [\App\Http\Controllers\Admin\TaskController::class, 'index'])->name('admin.tasks.board');
     Route::get('/tasks/table', [\App\Http\Controllers\Admin\TaskController::class, 'table'])->name('admin.tasks.table');
+    Route::get('/tasks/archived', [\App\Http\Controllers\Admin\TaskController::class, 'archived'])->name('admin.tasks.archived');
     Route::get('/tasks/{task}/details', [\App\Http\Controllers\Admin\TaskController::class, 'details'])->name('admin.tasks.details');
 
     Route::middleware(['role:Admin|Team Member'])->group(function () {
@@ -28,6 +29,7 @@ Route::middleware(['auth', 'verified', 'role:Admin|Team Member|Viewer'])->prefix
         Route::patch('/tasks/{task}/move', [\App\Http\Controllers\Admin\TaskController::class, 'move'])->name('admin.tasks.move');
         Route::patch('/tasks/reorder', [\App\Http\Controllers\Admin\TaskController::class, 'reorder'])->name('admin.tasks.reorder');
         Route::patch('/tasks/{task}/archive', [\App\Http\Controllers\Admin\TaskController::class, 'archive'])->name('admin.tasks.archive');
+        Route::patch('/tasks/{task}/unarchive', [\App\Http\Controllers\Admin\TaskController::class, 'unarchive'])->name('admin.tasks.unarchive');
         Route::post('/tasks/{task}/duplicate', [\App\Http\Controllers\Admin\TaskController::class, 'duplicate'])->name('admin.tasks.duplicate');
         Route::post('/tasks/{task}/comments', [\App\Http\Controllers\Admin\TaskController::class, 'comment'])->name('admin.tasks.comments.store');
         Route::post('/tasks/{task}/attachments', [\App\Http\Controllers\Admin\TaskController::class, 'attachment'])->name('admin.tasks.attachments.store');

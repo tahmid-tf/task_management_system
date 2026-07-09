@@ -89,10 +89,13 @@
                                                         {{ optional($task->due_date)->format('M d') ?? 'No due date' }}
                                                     </div>
                                                     @if ($task->assignee)
-                                                        <span class="rounded-circle bg-light border d-inline-flex align-items-center justify-content-center"
-                                                            style="width: 32px; height: 32px;" title="{{ $task->assignee->name }}">
-                                                            {{ \Illuminate\Support\Str::substr($task->assignee->name, 0, 1) }}
-                                                        </span>
+                                                        <div class="d-inline-flex align-items-center gap-2" title="{{ $task->assignee->name }}">
+                                                            <span class="rounded-circle bg-light border d-inline-flex align-items-center justify-content-center text-primary fw-semibold"
+                                                                style="width: 32px; height: 32px;">
+                                                                {{ \Illuminate\Support\Str::substr($task->assignee->name, 0, 1) }}
+                                                            </span>
+                                                            <span class="small fw-semibold text-dark">{{ $task->assignee->name }}</span>
+                                                        </div>
                                                     @endif
                                                 </div>
                                                 @if ($canManageTasks)
@@ -206,6 +209,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
     <script>
         $(function () {
+            const canManageTasks = @json($canManageTasks);
             $.ajaxSetup({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
@@ -213,16 +217,18 @@
                 }
             });
 
-            $('.task-column').each(function () {
-                new Sortable(this, {
-                    group: 'tasks',
-                    animation: 150,
-                    ghostClass: 'bg-light',
-                    onEnd: function () {
-                        saveBoardOrder();
-                    }
+            if (canManageTasks) {
+                $('.task-column').each(function () {
+                    new Sortable(this, {
+                        group: 'tasks',
+                        animation: 150,
+                        ghostClass: 'bg-light',
+                        onEnd: function () {
+                            saveBoardOrder();
+                        }
+                    });
                 });
-            });
+            }
 
             function saveBoardOrder() {
                 const columns = {};
@@ -233,11 +239,20 @@
                     }).get();
                 });
 
-                $.post('{{ route('admin.tasks.reorder') }}', {
-                    category_id: '{{ $selectedCategory?->id }}',
-                    columns: columns
-                }).fail(function () {
-                    Swal.fire('Error', 'Unable to save task order.', 'error');
+                $.ajax({
+                    url: '{{ route('admin.tasks.reorder') }}',
+                    method: 'PATCH',
+                    data: {
+                        category_id: '{{ $selectedCategory?->id }}',
+                        columns: columns
+                    }
+                }).fail(function (xhr) {
+                    const message = xhr.responseJSON?.message
+                        || xhr.responseJSON?.errors?.category_id?.[0]
+                        || xhr.responseJSON?.errors?.columns?.[0]
+                        || 'Unable to save task order.';
+
+                    Swal.fire('Error', message, 'error');
                 });
             }
 

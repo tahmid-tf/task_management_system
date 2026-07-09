@@ -80,6 +80,19 @@ class TaskController extends Controller
         ]);
     }
 
+    public function archived(Request $request): View
+    {
+        $tasks = Task::query()
+            ->with(['category', 'creator', 'assignee', 'labels'])
+            ->whereNotNull('archived_at')
+            ->orderByDesc('archived_at')
+            ->get();
+
+        return view('admin.tasks.archived', [
+            'tasks' => $tasks,
+        ]);
+    }
+
     public function create(Request $request): View
     {
         return view('admin.tasks.create', $this->formPayload([
@@ -238,15 +251,30 @@ class TaskController extends Controller
     public function archive(Task $task): JsonResponse
     {
         $task->update([
-            'archived_at' => $task->archived_at ? null : now(),
+            'archived_at' => now(),
         ]);
 
-        $this->logActivity($task, 'archived', $task->archived_at ? 'Task archived.' : 'Task restored from archive.');
+        $this->logActivity($task, 'archived', 'Task archived.');
 
         return response()->json([
             'success' => true,
-            'message' => $task->archived_at ? 'Task archived successfully.' : 'Task restored successfully.',
-            'archived' => (bool) $task->archived_at,
+            'message' => 'Task archived successfully.',
+            'archived' => true,
+        ]);
+    }
+
+    public function unarchive(Task $task): JsonResponse
+    {
+        $task->update([
+            'archived_at' => null,
+        ]);
+
+        $this->logActivity($task, 'unarchived', 'Task restored from archive.');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Task restored successfully.',
+            'archived' => false,
         ]);
     }
 

@@ -63,6 +63,10 @@
                     href="{{ route('admin.tasks.table') }}">
                     Table View
                 </a>
+                <a class="nav-link {{ request()->routeIs('admin.tasks.archived') ? 'active' : '' }}"
+                    href="{{ route('admin.tasks.archived') }}">
+                    Archived Tasks
+                </a>
                 <a class="nav-link {{ request()->routeIs('admin.task-categories.index') ? 'active' : '' }}"
                     href="{{ route('admin.task-categories.index') }}">
                     Categories
