@@ -73,6 +73,13 @@
                                     <td>{{ $user->address ? \Illuminate\Support\Str::limit($user->address, 60) : '-' }}</td>
                                     <td>{{ optional($user->created_at)->format('d M Y, h:i A') }}</td>
                                     <td>
+                                        <a
+                                            href="{{ route('admin.users.edit', $user) }}"
+                                            class="btn btn-datatable btn-icon btn-transparent-dark me-2"
+                                            title="Edit user"
+                                        >
+                                            <i data-feather="edit" width="18" height="18"></i>
+                                        </a>
                                         <button
                                             type="button"
                                             class="btn btn-datatable btn-icon btn-transparent-dark toggle-user-status"
@@ -97,6 +104,19 @@
             </div>
         </div>
     </main>
+
+    @if (session('success'))
+        <script>
+            $(function() {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: @json(session('success')),
+                    confirmButtonText: 'Okay',
+                });
+            });
+        </script>
+    @endif
 
     <script>
         $(function() {

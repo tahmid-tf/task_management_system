@@ -1,0 +1,177 @@
+@extends('layouts.admin')
+
+@section('content')
+    <main>
+        <header class="page-header page-header-compact page-header-light border-bottom bg-white mb-4">
+            <div class="container-xl px-4">
+                <div class="page-header-content">
+                    <div class="row align-items-center justify-content-between pt-3">
+                        <div class="col-auto mb-3">
+                            <h1 class="page-header-title">
+                                <div class="page-header-icon">
+                                    <i data-feather="edit-3"></i>
+                                </div>
+                                Edit User
+                            </h1>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="container-xl px-4 mt-4">
+            <div class="row">
+                <div class="col-xl-4">
+                    <div class="card mb-4 mb-xl-0">
+                        <div class="card-header">Profile Picture</div>
+                        <div class="card-body text-center">
+                            <img id="imagePreview" class="img-account-profile rounded-circle mb-2"
+                                src="{{ $user->image ? asset('storage/' . $user->image) : asset('assets/img/illustrations/profiles/profile-1.png') }}"
+                                alt="Profile preview" style="width: 200px; height: 200px; object-fit: cover;" />
+                            <div class="small font-italic text-muted mb-4">
+                                JPG, JPEG, PNG or WEBP up to 5 MB
+                            </div>
+                            <label class="btn btn-primary mb-0" for="image">Upload new image</label>
+                            <input class="d-none" id="image" name="image" type="file"
+                                accept=".jpg,.jpeg,.png,.webp" form="editUserForm" />
+                            <div class="small text-muted mt-3" id="imageName">No file selected</div>
+                            @error('image')
+                                <div class="text-danger small mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-8">
+                    <div class="card mb-4">
+                        <div class="card-header">User Details</div>
+                        <div class="card-body">
+                            <form id="editUserForm" method="POST" action="{{ route('admin.users.update', $user) }}"
+                                enctype="multipart/form-data">
+                                @csrf
+                                @method('PUT')
+
+                                <div class="row gx-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="small mb-1" for="name">Name</label>
+                                        <input class="form-control @error('name') is-invalid @enderror" id="name"
+                                            type="text" name="name" value="{{ old('name', $user->name) }}"
+                                            placeholder="Enter user name" />
+                                        @error('name')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="small mb-1" for="email">Email</label>
+                                        <input class="form-control @error('email') is-invalid @enderror" id="email"
+                                            type="email" name="email" value="{{ old('email', $user->email) }}"
+                                            placeholder="Enter user email" />
+                                        @error('email')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="row gx-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="small mb-1" for="phone">Phone</label>
+                                        <input class="form-control @error('phone') is-invalid @enderror" id="phone"
+                                            type="text" name="phone" value="{{ old('phone', $user->phone) }}"
+                                            placeholder="Enter phone number" />
+                                        @error('phone')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="small mb-1" for="role">Role</label>
+                                        <select class="form-select @error('role') is-invalid @enderror" id="role"
+                                            name="role">
+                                            <option value="">Select role</option>
+                                            @foreach ($roles as $role)
+                                                <option value="{{ $role }}"
+                                                    @selected(old('role', $currentRole) === $role)>
+                                                    {{ $role }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('role')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="row gx-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="small mb-1" for="status">Status</label>
+                                        <select class="form-select @error('status') is-invalid @enderror" id="status"
+                                            name="status">
+                                            <option value="active" @selected(old('status', $user->status) === 'active')>Active</option>
+                                            <option value="inactive" @selected(old('status', $user->status) === 'inactive')>Inactive</option>
+                                        </select>
+                                        @error('status')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="row gx-3 mb-3">
+                                    <div class="col-12">
+                                        <label class="small mb-1" for="address">Address</label>
+                                        <textarea class="form-control @error('address') is-invalid @enderror" id="address"
+                                            name="address" rows="4" placeholder="Enter address">{{ old('address', $user->address) }}</textarea>
+                                        @error('address')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="row gx-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="small mb-1" for="password">Password</label>
+                                        <input class="form-control @error('password') is-invalid @enderror" id="password"
+                                            type="password" name="password" placeholder="Leave blank to keep current password" />
+                                        @error('password')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="small mb-1" for="password_confirmation">Confirm Password</label>
+                                        <input class="form-control" id="password_confirmation" type="password"
+                                            name="password_confirmation" placeholder="Confirm password" />
+                                    </div>
+                                </div>
+
+                                <button class="btn btn-primary" type="submit">
+                                    Update user
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        $(function() {
+            const fallback = @json($user->image ? asset('storage/' . $user->image) : asset('assets/img/illustrations/profiles/profile-1.png'));
+
+            $('#image').on('change', function() {
+                const file = this.files && this.files[0];
+
+                if (!file) {
+                    $('#imagePreview').attr('src', fallback);
+                    $('#imageName').text('No file selected');
+                    return;
+                }
+
+                $('#imageName').text(file.name);
+
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    $('#imagePreview').attr('src', event.target.result);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+    </script>
+@endsection
