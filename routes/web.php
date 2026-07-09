@@ -13,7 +13,3 @@ Route::get('/dashboard', function () {
 require __DIR__ . '/auth.php';
 require __DIR__ . '/profile.php';
 require __DIR__ . '/user_routes/admin.php';
-
-Route::get('/test', function () {
-    return view('admin.user.add-user');
-});
