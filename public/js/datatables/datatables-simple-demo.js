@@ -1,9 +1,18 @@
-window.addEventListener('DOMContentLoaded', event => {
-    // Simple-DataTables
-    // https://github.com/fiduswriter/Simple-DataTables/wiki
+window.addEventListener('DOMContentLoaded', function () {
+    const table = document.getElementById('datatablesSimple');
 
-    const datatablesSimple = document.getElementById('datatablesSimple');
-    if (datatablesSimple) {
-        new simpleDatatables.DataTable(datatablesSimple);
+    if (!table || typeof DataTable === 'undefined') {
+        return;
     }
+
+    new DataTable(table, {
+        responsive: true,
+        autoWidth: false,
+        order: [],
+        columnDefs: [
+            { responsivePriority: 1, targets: 0 },
+            { responsivePriority: 2, targets: 1 },
+            { responsivePriority: 3, targets: -1 },
+        ],
+    });
 });

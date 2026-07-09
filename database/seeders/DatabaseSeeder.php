@@ -23,6 +23,9 @@ class DatabaseSeeder extends Seeder
             'email' => 'tahmid.tf1@gmail.com',
         ], [
             'name'              => 'Tahmid Ferdous',
+            'phone'             => '01700000000',
+            'address'           => 'Dhaka, Bangladesh',
+            'status'            => 'active',
             'password'          => '12345678',
             'email_verified_at' => now(),
         ]);

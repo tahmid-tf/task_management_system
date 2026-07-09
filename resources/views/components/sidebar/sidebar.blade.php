@@ -19,8 +19,15 @@
           </a>
           <!-- Sidenav Menu Heading (Core)-->
           <div class="sidenav-menu-heading">Core</div>
+
+
+          <a class="nav-link" href="{{ route('dashboard') }}">
+              <div class="nav-link-icon"><i data-feather="bar-chart"></i></div>
+              Dashboard
+          </a>
+
           <!-- Sidenav Accordion (Dashboard)-->
-          <a class="nav-link collapsed" href="javascript:void(0);" data-bs-toggle="collapse"
+          {{-- <a class="nav-link collapsed" href="javascript:void(0);" data-bs-toggle="collapse"
               data-bs-target="#collapseDashboards" aria-expanded="false" aria-controls="collapseDashboards">
               <div class="nav-link-icon"><i data-feather="activity"></i></div>
               Dashboards
@@ -34,7 +41,7 @@
                   <a class="nav-link" href="dashboard-2.html">Multipurpose</a>
                   <a class="nav-link" href="dashboard-3.html">Affiliate</a>
               </nav>
-          </div>
+          </div> --}}
 
 
           {{-- ---------------------- Add and view users ----------------------  --}}
@@ -49,7 +56,7 @@
           </a>
           <div class="collapse" id="collapseAddUser" data-bs-parent="#accordionSidenav">
               <nav class="sidenav-menu-nested nav accordion" id="accordionSidenavPages">
-                  <a class="nav-link" href="">Add User</a>
+                  <a class="nav-link" href="{{ route('admin.add-user') }}">Add User</a>
                   <a class="nav-link" href="">View Users</a>
               </nav>
           </div>
