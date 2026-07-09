@@ -2,6 +2,7 @@
     <div class="nav accordion" id="accordionSidenav">
         @php
             $isDashboardActive = request()->routeIs('dashboard');
+            $isExportActive = request()->routeIs('admin.tasks.export*');
             $isUsersActive = request()->routeIs(
                 'admin.add-user',
                 'admin.add-user.store',
@@ -21,8 +22,13 @@
             Dashboard
         </a>
 
+        <a class="nav-link {{ $isExportActive ? 'active' : '' }}" href="{{ route('admin.tasks.export') }}">
+            <div class="nav-link-icon"><i data-feather="download"></i></div>
+            Export Tasks
+        </a>
+
         <a class="nav-link {{ $isUsersActive ? '' : 'collapsed' }}" href="javascript:void(0);" data-bs-toggle="collapse"
-            data-bs-target="#collapseAddUser" aria-expanded="{{ $isUsersActive ? 'true' : 'false' }}"
+            data-bs-target="#collapseAddUser" aria-expanded="true"
             aria-controls="collapseAddUser">
             <div class="nav-link-icon"><i data-feather="activity"></i></div>
             Users
@@ -30,7 +36,7 @@
                 <i class="fas fa-angle-down"></i>
             </div>
         </a>
-        <div class="collapse {{ $isUsersActive ? 'show' : '' }}" id="collapseAddUser"
+        <div class="collapse show" id="collapseAddUser"
             data-bs-parent="#accordionSidenav">
             <nav class="sidenav-menu-nested nav accordion" id="accordionSidenavPages">
                 <a class="nav-link {{ request()->routeIs('admin.add-user') ? 'active' : '' }}"
@@ -45,7 +51,7 @@
         </div>
 
         <a class="nav-link {{ $isTasksActive ? '' : 'collapsed' }}" href="javascript:void(0);" data-bs-toggle="collapse"
-            data-bs-target="#collapseTasks" aria-expanded="{{ $isTasksActive ? 'true' : 'false' }}"
+            data-bs-target="#collapseTasks" aria-expanded="true"
             aria-controls="collapseTasks">
             <div class="nav-link-icon"><i data-feather="layers"></i></div>
             Tasks
@@ -53,7 +59,7 @@
                 <i class="fas fa-angle-down"></i>
             </div>
         </a>
-        <div class="collapse {{ $isTasksActive ? 'show' : '' }}" id="collapseTasks" data-bs-parent="#accordionSidenav">
+        <div class="collapse show" id="collapseTasks" data-bs-parent="#accordionSidenav">
             <nav class="sidenav-menu-nested nav accordion" id="accordionSidenavTaskPages">
                 <a class="nav-link {{ request()->routeIs('admin.tasks.board') ? 'active' : '' }}"
                     href="{{ route('admin.tasks.board') }}">
@@ -67,6 +73,10 @@
                     href="{{ route('admin.tasks.archived') }}">
                     Archived Tasks
                 </a>
+                {{-- <a class="nav-link {{ request()->routeIs('admin.tasks.export*') ? 'active' : '' }}"
+                    href="{{ route('admin.tasks.export') }}">
+                    Export Tasks
+                </a> --}}
                 <a class="nav-link {{ request()->routeIs('admin.task-categories.index') ? 'active' : '' }}"
                     href="{{ route('admin.task-categories.index') }}">
                     Categories
