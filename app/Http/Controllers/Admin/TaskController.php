@@ -54,7 +54,10 @@ class TaskController extends Controller
             'boardTasks'         => $boardTasks,
             'statuses'           => self::STATUSES,
             'priorities'         => self::PRIORITIES,
-            'users'              => User::query()->orderBy('name')->get(['id', 'name', 'email', 'image']),
+            'users'              => User::query()
+                ->where('status', 'active')
+                ->orderBy('name')
+                ->get(['id', 'name', 'email', 'image']),
             'labels'             => TaskLabel::query()->orderBy('name')->get(['id', 'name', 'slug', 'color']),
             'summaryCounts'      => $this->summaryCounts($boardTasks),
             'querySearch'        => $request->string('q')->toString(),
@@ -66,7 +69,8 @@ class TaskController extends Controller
         $tasks = Task::query()
             ->with(['category', 'creator', 'assignee', 'labels'])
             ->whereNull('archived_at')
-            ->latest()
+            ->orderByDesc('assigned_at')
+            ->orderByDesc('created_at')
             ->get();
 
         return view('admin.tasks.table', [
@@ -105,6 +109,7 @@ class TaskController extends Controller
                 'task_category_id' => $validated['task_category_id'],
                 'created_by'       => $request->user()->id,
                 'assigned_to'      => $validated['assigned_to'] ?? null,
+                'assigned_at'      => ! empty($validated['assigned_to']) ? now() : null,
                 'title'            => $validated['title'],
                 'description'      => $validated['description'] ?? null,
                 'status'           => $validated['status'],
@@ -138,18 +143,21 @@ class TaskController extends Controller
     public function edit(Task $task): View
     {
         return view('admin.tasks.edit', $this->formPayload([
-            'task' => $task->load(['labels', 'attachments']),
+            'task' => $task->load(['labels', 'attachments', 'assignee']),
         ]));
     }
 
     public function update(Request $request, Task $task): JsonResponse|\Illuminate\Http\RedirectResponse
     {
         $validated = $this->validateTask($request, $task->id);
+        $assignedTo = $validated['assigned_to'] ?? null;
+        $assignedAt = $task->assigned_to != $assignedTo ? ($assignedTo ? now() : null) : $task->assigned_at;
 
-        DB::transaction(function () use ($validated, $request, $task) {
+        DB::transaction(function () use ($validated, $request, $task, $assignedTo, $assignedAt) {
             $task->update([
                 'task_category_id' => $validated['task_category_id'],
-                'assigned_to'      => $validated['assigned_to'] ?? null,
+                'assigned_to'      => $assignedTo,
+                'assigned_at'      => $assignedAt,
                 'title'            => $validated['title'],
                 'description'      => $validated['description'] ?? null,
                 'status'           => $validated['status'],
@@ -283,6 +291,7 @@ class TaskController extends Controller
                 'task_category_id' => $task->task_category_id,
                 'created_by'       => auth()->id(),
                 'assigned_to'      => $task->assigned_to,
+                'assigned_at'      => $task->assigned_to ? now() : null,
                 'title'            => $task->title.' (Copy)',
                 'description'      => $task->description,
                 'status'           => $task->status,
@@ -385,7 +394,10 @@ class TaskController extends Controller
     {
         return array_merge([
             'categories' => TaskCategory::query()->orderBy('position')->orderBy('name')->get(),
-            'users'      => User::query()->orderBy('name')->get(['id', 'name', 'email', 'image']),
+            'users'      => User::query()
+                ->where('status', 'active')
+                ->orderBy('name')
+                ->get(['id', 'name', 'email', 'image']),
             'statuses'   => self::STATUSES,
             'priorities' => self::PRIORITIES,
             'labels'     => TaskLabel::query()->orderBy('name')->get(['id', 'name', 'slug', 'color']),

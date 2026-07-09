@@ -17,6 +17,7 @@ class Task extends Model
         'task_category_id',
         'created_by',
         'assigned_to',
+        'assigned_at',
         'title',
         'description',
         'status',
@@ -30,6 +31,7 @@ class Task extends Model
 
     protected $casts = [
         'due_date' => 'date',
+        'assigned_at' => 'datetime',
         'archived_at' => 'datetime',
         'estimated_time' => 'decimal:2',
         'actual_time' => 'decimal:2',

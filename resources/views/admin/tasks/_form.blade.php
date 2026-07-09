@@ -110,6 +110,11 @@
                     <label class="form-label">Assignee</label>
                     <select name="assigned_to" class="form-select">
                         <option value="">Unassigned</option>
+                        @if (isset($task) && $task && $task->assigned_to && ! $users->contains('id', $task->assigned_to))
+                            <option value="{{ $task->assigned_to }}" selected disabled>
+                                {{ $task->assignee?->name ?? 'Current Assignee (Inactive)' }} (Inactive)
+                            </option>
+                        @endif
                         @foreach ($users as $user)
                             <option value="{{ $user->id }}" @selected(old('assigned_to', $task->assigned_to ?? '') == $user->id)>
                                 {{ $user->name }}
