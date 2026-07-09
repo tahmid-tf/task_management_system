@@ -16,3 +16,7 @@ Route::middleware(['auth', 'verified', 'role:Admin'])->prefix('admin')->group(fu
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/profile.php';
+
+Route::get('/test', function () {
+    return view('admin.user.add-user');
+});
