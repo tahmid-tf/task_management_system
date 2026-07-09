@@ -7,15 +7,12 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    return view('dashboard.dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
-
-Route::middleware(['auth', 'verified', 'role:Admin'])->prefix('admin')->group(function () {
-    Route::view('/', 'layouts.admin')->name('admin.dashboard');
-});
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/profile.php';
+require __DIR__ . '/user_routes/admin.php';
 
 Route::get('/test', function () {
     return view('admin.user.add-user');
