@@ -39,14 +39,24 @@
                                 <th>Phone</th>
                                 <th>Role</th>
                                 <th>Status</th>
-                                <th>Address</th>
+                                {{-- <th>Address</th> --}}
                                 <th>Created</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($users as $user)
-                                <tr data-user-id="{{ $user->id }}">
+                                <tr
+                                    data-user-id="{{ $user->id }}"
+                                    data-user-name="{{ $user->name }}"
+                                    data-user-email="{{ $user->email }}"
+                                    data-user-phone="{{ $user->phone ?? '-' }}"
+                                    data-user-role="{{ $user->getRoleNames()->first() ?? 'No Role' }}"
+                                    data-user-status="{{ $user->status }}"
+                                    data-user-address="{{ $user->address ?? '-' }}"
+                                    data-user-created="{{ optional($user->created_at)->format('d M Y, h:i A') }}"
+                                    data-user-image="{{ $user->image ? asset('storage/' . $user->image) : asset('assets/img/illustrations/profiles/profile-1.png') }}"
+                                >
                                     <td>
                                         <img
                                             src="{{ $user->image ? asset('storage/' . $user->image) : asset('assets/img/illustrations/profiles/profile-1.png') }}"
@@ -70,9 +80,16 @@
                                             <span class="badge bg-secondary text-white rounded-pill">Inactive</span>
                                         @endif
                                     </td>
-                                    <td>{{ $user->address ? \Illuminate\Support\Str::limit($user->address, 60) : '-' }}</td>
+                                    {{-- <td>{{ $user->address ? \Illuminate\Support\Str::limit($user->address, 60) : '-' }}</td> --}}
                                     <td>{{ optional($user->created_at)->format('d M Y, h:i A') }}</td>
                                     <td>
+                                        <button
+                                            type="button"
+                                            class="btn btn-datatable btn-icon btn-transparent-dark view-user-details me-2"
+                                            title="View user"
+                                        >
+                                            <i data-feather="eye" width="18" height="18"></i>
+                                        </button>
                                         <a
                                             href="{{ route('admin.users.edit', $user) }}"
                                             class="btn btn-datatable btn-icon btn-transparent-dark me-2"
@@ -120,6 +137,63 @@
 
     <script>
         $(function() {
+            $(document).on('click', '.view-user-details', function() {
+                const $row = $(this).closest('tr');
+                const image = $row.data('user-image');
+                const name = $row.data('user-name');
+                const email = $row.data('user-email');
+                const phone = $row.data('user-phone');
+                const role = $row.data('user-role');
+                const status = $row.data('user-status');
+                const address = $row.data('user-address');
+                const created = $row.data('user-created');
+
+                const statusBadge = status === 'active'
+                    ? '<span class="badge bg-success text-white rounded-pill">Active</span>'
+                    : '<span class="badge bg-secondary text-white rounded-pill">Inactive</span>';
+
+                Swal.fire({
+                    title: 'User Details',
+                    html: `
+                        <div class="text-start" style="text-align:left;">
+                            <div style="display:flex; gap:16px; align-items:center; padding:4px 0 18px; border-bottom:1px solid #e5e7eb; margin-bottom:18px;">
+                                <img src="${image}" alt="${name}" style="width:84px;height:84px;object-fit:cover;border-radius:9999px;border:4px solid #eef2ff;box-shadow:0 10px 24px rgba(15,23,42,.12);">
+                                <div style="min-width:0;">
+                                    <div style="font-size:18px;font-weight:700;color:#0f172a;line-height:1.2;">${name}</div>
+                                    <div style="font-size:13px;color:#64748b;margin-top:4px;">${email}</div>
+                                    <div style="margin-top:10px;">${statusBadge}</div>
+                                </div>
+                            </div>
+
+                            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;">
+                                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:12px 14px;">
+                                    <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:4px;">Phone</div>
+                                    <div style="font-size:14px;font-weight:600;color:#0f172a;word-break:break-word;">${phone}</div>
+                                </div>
+                                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:12px 14px;">
+                                    <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:4px;">Role</div>
+                                    <div style="font-size:14px;font-weight:600;color:#0f172a;word-break:break-word;">${role}</div>
+                                </div>
+                                <div style="grid-column:1 / -1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:12px 14px;">
+                                    <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:4px;">Address</div>
+                                    <div style="font-size:14px;font-weight:600;color:#0f172a;line-height:1.6;">${address}</div>
+                                </div>
+                                <div style="grid-column:1 / -1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:12px 14px;">
+                                    <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:4px;">Created</div>
+                                    <div style="font-size:14px;font-weight:600;color:#0f172a;">${created}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `,
+                    confirmButtonText: 'Close',
+                    confirmButtonColor: '#0d6efd',
+                    customClass: {
+                        popup: 'shadow-lg',
+                    },
+                    width: 600,
+                });
+            });
+
             $(document).on('click', '.toggle-user-status', function() {
                 const $button = $(this);
                 const url = $button.data('url');
