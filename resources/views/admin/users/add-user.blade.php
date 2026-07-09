@@ -8,7 +8,8 @@
                     <div class="row align-items-center justify-content-between pt-3">
                         <div class="col-auto mb-3">
                             <h1 class="page-header-title">
-                                <div class="page-head                                    <i data-feather="user-plus"></i>
+                                <div class="page-header-icon">
+                                    <i data-feather="user-plus"></i>
                                 </div>
                                 Add User
                             </h1>
@@ -30,9 +31,7 @@
                             <div class="small font-italic text-muted mb-4">
                                 JPG, JPEG, PNG or WEBP up to 5 MB
                             </div>
-                            <label class="btn btn-primary mb-0" for="image">
-                                Upload new image
-                            </label>
+                            <label class="btn btn-primary mb-0" for="image">Upload new image</label>
                             <input class="d-none" id="image" name="image" type="file"
                                 accept=".jpg,.jpeg,.png,.webp" form="addUserForm" />
                             <div class="small text-muted mt-3" id="imageName">No file selected</div>
@@ -74,6 +73,18 @@
 
                                 <div class="row gx-3 mb-3">
                                     <div class="col-md-6">
+                                        <label class="small mb-1" for="phone">Phone</label>
+                                        <input class="form-control @error('phone') is-invalid @enderror" id="phone"
+                                            type="text" name="phone" value="{{ old('phone') }}"
+                                            placeholder="Enter phone number" />
+                                        @error('phone')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="row gx-3 mb-3">
+                                    <div class="col-md-6">
                                         <label class="small mb-1" for="password">Password</label>
                                         <input class="form-control @error('password') is-invalid @enderror" id="password"
                                             type="password" name="password" placeholder="Enter password" />
@@ -95,11 +106,33 @@
                                             name="role">
                                             <option value="">Select role</option>
                                             @foreach ($roles as $role)
-                                                <option value="{{ $role }}" @selected(old('role') === $role)>
-                                                    {{ $role }}</option>
+                                                <option value="{{ $role }}" @selected(old('role') === $role)>{{ $role }}</option>
                                             @endforeach
                                         </select>
                                         @error('role')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="small mb-1" for="status">Status</label>
+                                        <select class="form-select @error('status') is-invalid @enderror" id="status"
+                                            name="status">
+                                            <option value="active" @selected(old('status', 'active') === 'active')>Active</option>
+                                            <option value="inactive" @selected(old('status') === 'inactive')>Inactive</option>
+                                        </select>
+                                        @error('status')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="row gx-3 mb-3">
+                                    <div class="col-12">
+                                        <label class="small mb-1" for="address">Address</label>
+                                        <textarea class="form-control @error('address') is-invalid @enderror" id="address"
+                                            name="address" rows="4" placeholder="Enter address">{{ old('address') }}</textarea>
+                                        @error('address')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -167,12 +200,12 @@
                         $('#addUserForm')[0].reset();
                         $('#imagePreview').attr('src', fallback);
                         $('#imageName').text('No file selected');
+                        $('#status').val('active');
                     },
                     error: function(xhr) {
                         const response = xhr.responseJSON || {};
                         const errors = response.errors || {};
-                        const firstError = Object.values(errors).flat()[0] || response
-                            .message || 'Something went wrong.';
+                        const firstError = Object.values(errors).flat()[0] || response.message || 'Something went wrong.';
 
                         Swal.fire({
                             icon: 'error',
@@ -188,10 +221,4 @@
             });
         });
     </script>
-    </div>
-    </div>
-    </div>
-    </div>
-    </div>
-    </main>
 @endsection
