@@ -19,6 +19,8 @@ Route::middleware(['auth', 'verified', 'role:Admin|Team Member|Viewer'])->prefix
     Route::get('/tasks', [\App\Http\Controllers\Admin\TaskController::class, 'index'])->name('admin.tasks.board');
     Route::get('/tasks/table', [\App\Http\Controllers\Admin\TaskController::class, 'table'])->name('admin.tasks.table');
     Route::get('/tasks/archived', [\App\Http\Controllers\Admin\TaskController::class, 'archived'])->name('admin.tasks.archived');
+    Route::get('/tasks/export', [\App\Http\Controllers\Admin\TaskExportController::class, 'index'])->name('admin.tasks.export');
+    Route::get('/tasks/export/download', [\App\Http\Controllers\Admin\TaskExportController::class, 'download'])->name('admin.tasks.export.download');
     Route::get('/tasks/{task}/details', [\App\Http\Controllers\Admin\TaskController::class, 'details'])->name('admin.tasks.details');
 
     Route::middleware(['role:Admin|Team Member'])->group(function () {
