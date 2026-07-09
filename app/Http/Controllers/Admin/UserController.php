@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -30,6 +31,20 @@ class UserController extends Controller
                 ->where('guard_name', 'web')
                 ->orderBy('name')
                 ->pluck('name'),
+        ]);
+    }
+
+    public function edit(User $user): View
+    {
+        $user->load('roles');
+
+        return view('admin.users.edit-user', [
+            'user' => $user,
+            'roles' => Role::query()
+                ->where('guard_name', 'web')
+                ->orderBy('name')
+                ->pluck('name'),
+            'currentRole' => $user->getRoleNames()->first(),
         ]);
     }
 
@@ -105,6 +120,58 @@ class UserController extends Controller
             ),
             'status' => $user->status,
         ]);
+    }
+
+    public function update(Request $request, User $user)
+    {
+        $validator = Validator::make($request->all(), [
+            'name'     => ['required', 'string', 'max:255'],
+            'email'    => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'phone'    => ['nullable', 'string', 'max:30'],
+            'address'  => ['nullable', 'string'],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            'role'     => [
+                'required',
+                Rule::exists('roles', 'name')->where('guard_name', 'web'),
+            ],
+            'status'   => ['required', 'in:active,inactive'],
+            'image'    => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ]);
+
+        if ($validator->fails()) {
+            return back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $validated = $validator->validated();
+
+        if ($request->hasFile('image')) {
+            if ($user->image) {
+                Storage::disk('public')->delete($user->image);
+            }
+
+            $user->image = $request->file('image')->store('users', 'public');
+        }
+
+        $user->fill([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+            'address' => $validated['address'] ?? null,
+            'status' => $validated['status'],
+        ]);
+
+        if (! empty($validated['password'] ?? null)) {
+            $user->password = Hash::make($validated['password']);
+        }
+
+        $user->save();
+        $user->syncRoles([$validated['role']]);
+
+        return redirect()
+            ->route('admin.view-users')
+            ->with('success', 'User updated successfully.');
     }
 
 }
