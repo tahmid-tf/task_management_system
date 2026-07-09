@@ -9,4 +9,9 @@ class UserController extends Controller
     {
         return view('admin.users.add-user');
     }
+
+    public function store()
+    {
+
+    }
 }
