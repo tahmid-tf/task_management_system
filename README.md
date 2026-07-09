@@ -1,58 +1,137 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Task Management Admin
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Task Management Admin is a Laravel-based admin panel for managing users and laying the foundation for a Jira-style task management system. The current codebase focuses on authentication, admin navigation, role-based access, and a polished user management experience built with DataTables, SweetAlert2, and Spatie Permission.
 
-## About Laravel
+## Overview
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+This project is built on Laravel 13 and includes:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- Laravel Breeze authentication
+- Admin layout with active sidebar highlighting
+- Spatie roles and permissions
+- User CRUD workflow with image upload
+- Status toggling for active and inactive users
+- DataTables-powered responsive user listing
+- SweetAlert2 confirmation and detail modals
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Features
 
-## Learning Laravel
+- Authentication and protected admin routes
+- User creation with:
+  - name
+  - email
+  - phone
+  - address
+  - role
+  - status
+  - profile image
+- User editing with optional password update
+- Role assignment through Spatie Permission
+- Active and inactive status toggling
+- Responsive table listing with:
+  - view details modal
+  - edit action
+  - status toggle action
+- Profile image upload via Laravel storage
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Requirements
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- PHP 8.3 or higher
+- Composer
+- Node.js and npm
+- MySQL, SQLite, or another Laravel-supported database
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## Installation
 
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+Clone the repository and install the dependencies:
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+npm install
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Create your environment file and generate an application key:
 
-## Contributing
+```bash
+php -r "file_exists('.env') || copy('.env.example', '.env');"
+php artisan key:generate
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Configure your database credentials in `.env`, then run the migrations and seeders:
 
-## Code of Conduct
+```bash
+php artisan migrate --seed
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Create the storage symlink for uploaded user images:
 
-## Security Vulnerabilities
+```bash
+php artisan storage:link
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Build the frontend assets:
+
+```bash
+npm run build
+```
+
+## Running The App
+
+Start the Laravel development server:
+
+```bash
+php artisan serve
+```
+
+If you are using Vite during development, run:
+
+```bash
+npm run dev
+```
+
+## Usage
+
+After logging in as an admin user:
+
+- Go to `/admin/view-users` to see the user table
+- Use `Add User` to create a new user
+- Click the edit button to update an existing user
+- Click the status icon to switch a user between active and inactive
+- Click the view icon to open a SweetAlert detail card
+
+## Admin Routes
+
+- `GET /admin/view-users` - user listing
+- `GET /admin/add-user` - create user form
+- `POST /admin/add-user` - create user submission
+- `GET /admin/users/{user}/edit` - edit user form
+- `PUT /admin/users/{user}` - update user submission
+- `PATCH /admin/users/{user}/toggle-status` - toggle active/inactive status
+
+## Tech Stack
+
+- Laravel 13
+- Laravel Breeze
+- Spatie Laravel Permission
+- Bootstrap admin template
+- DataTables
+- SweetAlert2
+- Feather Icons
+- jQuery
+
+## Project Structure
+
+- `app/Http/Controllers/Admin/UserController.php` - admin user management actions
+- `resources/views/admin/users/` - add, edit, and view user pages
+- `resources/views/components/sidebar/sidebar.blade.php` - active admin sidebar
+- `routes/user_routes/admin.php` - admin user routes
+
+## Notes
+
+- User images are stored on the `public` disk and served through the storage symlink.
+- The current codebase is focused on user administration and reusable UI patterns for the future task board system.
+- Roles are managed through Spatie Permission, while user status is handled separately through the `status` column.
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is open-sourced under the MIT license.

@@ -31,6 +31,19 @@ class DatabaseSeeder extends Seeder
         ]);
         $adminUser->assignRole($adminRole);
 
+        $defaultCategories = [
+            ['name' => 'General', 'slug' => 'general', 'color' => '#0d6efd', 'position' => 1],
+            ['name' => 'Development', 'slug' => 'development', 'color' => '#198754', 'position' => 2],
+            ['name' => 'Operations', 'slug' => 'operations', 'color' => '#fd7e14', 'position' => 3],
+        ];
+
+        foreach ($defaultCategories as $category) {
+            \App\Models\TaskCategory::updateOrCreate(
+                ['slug' => $category['slug']],
+                $category
+            );
+        }
+
         // $teamMemberUser = User::updateOrCreate([
         //     'email' => 'team@example.com',
         // ], [
