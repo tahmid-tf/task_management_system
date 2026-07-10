@@ -11,9 +11,9 @@
 
         $statusColors = [
             'backlog' => '#64748b',
-            'todo' => '#0d6efd',
+            'todo' => '#2563eb',
             'in_progress' => '#f59e0b',
-            'done' => '#198754',
+            'done' => '#0f766e',
         ];
     @endphp
 
@@ -181,11 +181,11 @@
                                 @forelse ($recentActivity as $activity)
                                     @php
                                         $activityColor = match ($activity->action) {
-                                            'created' => '#0d6efd',
-                                            'updated' => '#0ea5e9',
+                                            'created' => '#2563eb',
+                                            'updated' => '#0f766e',
                                             'moved' => '#f59e0b',
-                                            'commented' => '#8b5cf6',
-                                            'attachment_added' => '#14b8a6',
+                                            'commented' => '#172033',
+                                            'attachment_added' => '#0f766e',
                                             'archived', 'unarchived' => '#64748b',
                                             default => '#64748b',
                                         };
@@ -248,7 +248,7 @@
                                                 </td>
                                                 <td>
                                                     <span class="badge rounded-pill"
-                                                        style="background: rgba(13, 110, 253, 0.10); color: #0d6efd;">
+                                                        style="background: rgba(15, 118, 110, 0.10); color: #0f766e;">
                                                         {{ ucfirst(str_replace('_', ' ', $task->status)) }}
                                                     </span>
                                                 </td>

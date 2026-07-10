@@ -20,7 +20,7 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Color</label>
-                        <input type="color" name="color" value="#0d6efd" class="form-control form-control-color">
+                        <input type="color" name="color" value="#0f766e" class="form-control form-control-color">
                     </div>
                     <div class="col-md-4 d-flex align-items-end">
                         <button type="submit" class="btn btn-primary">Create Category</button>
@@ -42,13 +42,13 @@
                 <div id="categoryList" class="row g-3">
                     @foreach ($categories as $category)
                         <div class="col-12 col-md-6 col-xl-4" data-id="{{ $category->id }}">
-                            <div class="border rounded-3 p-3 h-100 d-flex flex-column gap-3" style="border-left:4px solid {{ $category->color ?? '#0d6efd' }};">
+                            <div class="border rounded-3 p-3 h-100 d-flex flex-column gap-3" style="border-left:4px solid {{ $category->color ?? '#0f766e' }};">
                                 <div class="d-flex align-items-start justify-content-between gap-3">
                                     <div>
                                         <div class="fw-bold">{{ $category->name }}</div>
                                         <div class="text-muted small">{{ $category->tasks_count }} task(s)</div>
                                     </div>
-                                    <span class="badge" style="background: {{ $category->color ?? '#0d6efd' }};">
+                                    <span class="badge" style="background: {{ $category->color ?? '#0f766e' }};">
                                         {{ $category->slug }}
                                     </span>
                                 </div>
@@ -57,7 +57,7 @@
                                         class="btn btn-sm btn-outline-secondary js-edit-category"
                                         data-id="{{ $category->id }}"
                                         data-name="{{ $category->name }}"
-                                        data-color="{{ $category->color ?? '#0d6efd' }}">
+                                        data-color="{{ $category->color ?? '#0f766e' }}">
                                         Edit
                                     </button>
                                     <button type="button"

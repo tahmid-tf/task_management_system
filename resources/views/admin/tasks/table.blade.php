@@ -47,7 +47,7 @@
                                     </td>
                                     <td>{{ $task->category?->name ?? '-' }}</td>
                                     <td><span class="badge bg-secondary">{{ ucfirst(str_replace('_', ' ', $task->status)) }}</span></td>
-                                    <td><span class="badge bg-info text-dark">{{ ucfirst($task->priority) }}</span></td>
+                                    <td><span class="badge bg-info text-white">{{ ucfirst($task->priority) }}</span></td>
                                     <td>{{ $task->assignee?->name ?? '-' }}</td>
                                     <td>{{ optional($task->due_date)->format('M d, Y') ?? '-' }}</td>
                                     <td>
