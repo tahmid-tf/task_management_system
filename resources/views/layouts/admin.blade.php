@@ -36,12 +36,14 @@
     </script>
 </head>
 
-<body class="nav-fixed">    @php
-        $authUser = auth()->user();
-        $authUserName = $authUser?->name ?? 'User';
-        $authUserEmail = $authUser?->email ?? '';
-        $authUserImage = $authUser?->image ? asset('storage/' . $authUser->image) : asset('assets/img/illustrations/profiles/profile-1.png');
-    @endphp
+<body class="nav-fixed"> @php
+    $authUser = auth()->user();
+    $authUserName = $authUser?->name ?? 'User';
+    $authUserEmail = $authUser?->email ?? '';
+    $authUserImage = $authUser?->image
+        ? asset('storage/' . $authUser->image)
+        : asset('assets/img/illustrations/profiles/profile-1.png');
+@endphp
     <nav class="topnav navbar navbar-expand shadow justify-content-between justify-content-sm-start navbar-light bg-white"
         id="sidenavAccordion">
         <!-- Sidenav Toggle Button-->
@@ -52,7 +54,7 @@
         <!-- * * Tip * * You can use text or an image for your navbar brand.-->
         <!-- * * * * * * When using an image, we recommend the SVG format.-->
         <!-- * * * * * * Dimensions: Maximum height: 32px, maximum width: 240px-->
-        <a class="navbar-brand pe-3 ps-4 ps-lg-2" href="index.html">Dashboard</a>
+        <a class="navbar-brand pe-3 ps-4 ps-lg-2" href="{{ route('dashboard') }}">Dashboard</a>
         <!-- Navbar Search Input-->
         <!-- * * Note: * * Visible only on and above the lg breakpoint-->
         <form class="form-inline me-auto d-none d-lg-block me-3">
@@ -82,24 +84,19 @@
                         </div>
                     </form>
                 </div>
-            <!-- User Dropdown-->
+                <!-- User Dropdown-->
             <li class="nav-item dropdown no-caret dropdown-user me-3 me-lg-4">
                 <a class="btn btn-icon btn-transparent-dark dropdown-toggle" id="navbarDropdownUserImage"
                     href="javascript:void(0);" role="button" data-bs-toggle="dropdown" aria-haspopup="true"
                     aria-expanded="false">
-                    <img
-                        class="rounded-circle"
-                        src="{{ $authUserImage }}"
-                        alt="{{ $authUserName }}"
-                        style="width: 2.25rem; height: 2.25rem; object-fit: cover; display: block;"
-                    >
+                    <img class="rounded-circle" src="{{ $authUserImage }}" alt="{{ $authUserName }}"
+                        style="width: 2.25rem; height: 2.25rem; object-fit: cover; display: block;">
                 </a>
                 <div class="dropdown-menu dropdown-menu-end border-0 shadow animated--fade-in-up"
                     aria-labelledby="navbarDropdownUserImage">
                     <div class="dropdown-header d-flex align-items-center px-3 py-3">
                         <div class="flex-shrink-0" style="width: 2.5rem; height: 2.5rem;">
-                            <img class="rounded-circle w-100 h-100"
-                                src="{{ $authUserImage }}" alt="{{ $authUserName }}"
+                            <img class="rounded-circle w-100 h-100" src="{{ $authUserImage }}" alt="{{ $authUserName }}"
                                 style="object-fit: cover; display: block;" />
                         </div>
                         <div class="dropdown-user-details ms-3 text-start">
@@ -183,8 +180,10 @@
     <script src="{{ asset('assets/demo/chart-bar-demo.js') }}"></script>
     <script src="https://cdn.datatables.net/2.3.8/js/dataTables.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.datatables.net/2.3.8/js/dataTables.bootstrap5.min.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.datatables.net/responsive/3.0.7/js/dataTables.responsive.min.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.datatables.net/responsive/3.0.7/js/responsive.bootstrap5.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/responsive/3.0.7/js/dataTables.responsive.min.js" crossorigin="anonymous">
+    </script>
+    <script src="https://cdn.datatables.net/responsive/3.0.7/js/responsive.bootstrap5.min.js" crossorigin="anonymous">
+    </script>
     <script src="{{ asset('js/datatables/datatables-simple-demo.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/litepicker/dist/bundle.js" crossorigin="anonymous"></script>
     <script src="{{ asset('js/litepicker.js') }}"></script>
@@ -211,4 +210,3 @@
 </body>
 
 </html>
-
