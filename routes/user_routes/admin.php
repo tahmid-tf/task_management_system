@@ -3,6 +3,10 @@
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified', 'role:Admin'])->prefix('admin')->group(function () {
+    Route::get('/mail-center', [\App\Http\Controllers\Admin\MailCenterController::class, 'index'])->name('admin.mail-center.index');
+    Route::post('/mail-center/delayed-all', [\App\Http\Controllers\Admin\MailCenterController::class, 'sendDelayedToAll'])->name('admin.mail-center.delayed-all');
+    Route::post('/mail-center/delayed-user', [\App\Http\Controllers\Admin\MailCenterController::class, 'sendDelayedToUser'])->name('admin.mail-center.delayed-user');
+    Route::post('/mail-center/custom', [\App\Http\Controllers\Admin\MailCenterController::class, 'sendCustomMail'])->name('admin.mail-center.custom');
 
     // --------------------------- view users ---------------------------
     Route::get('/view-users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('admin.view-users');
