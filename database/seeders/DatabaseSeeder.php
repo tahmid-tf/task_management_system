@@ -39,9 +39,9 @@ class DatabaseSeeder extends Seeder
         $adminUser->assignRole($adminRole);
 
         $teamMemberUser = User::updateOrCreate([
-            'email' => 'team.member@example.com',
+            'email' => 'team63@dipti.com.bd',
         ], [
-            'name'              => 'Nadia Rahman',
+            'name'              => 'Tahmid Ferdous 2',
             'phone'             => '01800000000',
             'address'           => 'Chattogram, Bangladesh',
             'status'            => 'active',
