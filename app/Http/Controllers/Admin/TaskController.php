@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Mail\UserMailNotification;
+use App\Models\AppSetting;
 use App\Http\Controllers\Controller;
 use App\Models\Task;
 use App\Models\TaskActivityLog;
@@ -14,11 +16,14 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Throwable;
 
 class TaskController extends Controller
 {
@@ -127,11 +132,14 @@ class TaskController extends Controller
             return $task->load(['category', 'creator', 'assignee', 'labels']);
         });
 
+        $assignmentMailSent = $this->notifyAssignedUser($task);
+
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
                 'message' => 'Task created successfully.',
                 'task'    => $this->taskPayload($task),
+                'assignment_mail_sent' => $assignmentMailSent,
             ]);
         }
 
@@ -267,6 +275,20 @@ class TaskController extends Controller
         ]);
     }
 
+    public function destroy(Task $task): JsonResponse
+    {
+        DB::transaction(function () use ($task) {
+            $task->delete();
+            $this->logActivity($task, 'deleted', 'Task deleted.');
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Task deleted successfully.',
+            'deleted' => true,
+        ]);
+    }
+
     public function unarchive(Task $task): JsonResponse
     {
         $task->update([
@@ -308,10 +330,13 @@ class TaskController extends Controller
             return $copy->load(['category', 'creator', 'assignee', 'labels']);
         });
 
+        $assignmentMailSent = $this->notifyAssignedUser($copy);
+
         return response()->json([
             'success' => true,
             'message' => 'Task duplicated successfully.',
             'task'    => $this->taskPayload($copy),
+            'assignment_mail_sent' => $assignmentMailSent,
         ]);
     }
 
@@ -558,5 +583,62 @@ class TaskController extends Controller
         $palette = ['#0d6efd', '#198754', '#6f42c1', '#dc3545', '#fd7e14', '#20c997', '#0dcaf0', '#6610f2'];
 
         return $palette[crc32($value) % count($palette)];
+    }
+
+    private function notifyAssignedUser(Task $task): bool
+    {
+        if (! AppSetting::mailSystemEnabled()) {
+            return false;
+        }
+
+        if (! $task->assignee || $task->assignee->status !== 'active' || empty($task->assignee->email)) {
+            return false;
+        }
+
+        try {
+            Mail::to($task->assignee->email)->send(new UserMailNotification(
+                subjectLine: 'New task assigned - '.config('app.name'),
+                heading: 'New task assigned',
+                intro: "Hello {$task->assignee->name}, a new task has been assigned to you.",
+                tasks: [$this->assignmentMailPayload($task)],
+                customMessage: 'Please review the task details and begin work when ready.',
+                closingLine: 'Thank you, '.config('app.name'),
+            ));
+
+            return true;
+        } catch (Throwable $e) {
+            Log::warning('Failed to send task assignment mail.', [
+                'task_id' => $task->id,
+                'user_id' => $task->assigned_to,
+                'error'   => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+    }
+
+    private function assignmentMailPayload(Task $task): array
+    {
+        return [
+            'title'       => $task->title,
+            'description' => $this->formatMailDescription($task->description),
+            'category'    => $task->category?->name ?? 'No category',
+            'priority'    => ucfirst($task->priority),
+            'status'      => ucfirst(str_replace('_', ' ', $task->status)),
+            'due_date'    => optional($task->due_date)->format('M d, Y') ?? '-',
+            'assigned_by' => $task->creator?->name ?? 'System',
+        ];
+    }
+
+    private function formatMailDescription(?string $description): string
+    {
+        return $description
+            ? Str::of($description)
+                ->replace("\r\n", "\n")
+                ->replace("\r", "\n")
+                ->replace('|', '¦')
+                ->trim()
+                ->toString()
+            : '-';
     }
 }

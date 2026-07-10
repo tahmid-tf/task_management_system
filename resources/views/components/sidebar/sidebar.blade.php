@@ -3,6 +3,8 @@
         @php
             $isDashboardActive = request()->routeIs('dashboard');
             $isMailCenterActive = request()->routeIs('admin.mail-center.*');
+            $isMailSystemActive = request()->routeIs('admin.mail-system.*');
+            $mailSystemEnabled = \App\Models\AppSetting::mailSystemEnabled();
             $isExportActive = request()->routeIs('admin.tasks.export*');
             $isUsersActive = request()->routeIs(
                 'admin.add-user',
@@ -26,6 +28,17 @@
         <a class="nav-link {{ $isMailCenterActive ? 'active' : '' }}" href="{{ route('admin.mail-center.index') }}">
             <div class="nav-link-icon"><i data-feather="mail"></i></div>
             Send Mail
+        </a>
+
+        <a class="nav-link d-flex align-items-center justify-content-between {{ $isMailSystemActive ? 'active' : '' }}"
+            href="{{ route('admin.mail-system.index') }}">
+            <span class="d-inline-flex align-items-center">
+                <div class="nav-link-icon"><i data-feather="toggle-right"></i></div>
+                Mail System
+            </span>
+            <span class="badge rounded-pill {{ $mailSystemEnabled ? 'bg-success' : 'bg-secondary' }}">
+                {{ $mailSystemEnabled ? 'On' : 'Off' }}
+            </span>
         </a>
 
         <a class="nav-link {{ $isExportActive ? 'active' : '' }}" href="{{ route('admin.tasks.export') }}">

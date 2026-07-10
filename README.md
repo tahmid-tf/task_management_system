@@ -1,6 +1,6 @@
 # Task Management Admin
 
-Task Management Admin is a Laravel 13 application for structured admin operations, user management, task tracking, delayed-task email reminders, and exportable reporting. It combines a polished admin layout with role-based access control, responsive DataTables, SweetAlert2 interactions, SortableJS task ordering, and XLSX exports.
+Task Management Admin is a Laravel 13 application for structured admin operations, user management, task tracking, delayed-task email reminders, and exportable reporting. It combines a polished admin layout with role-based access control, responsive DataTables, SweetAlert2 interactions, SortableJS task ordering, modal-based task creation, admin-only soft delete support, and XLSX exports.
 
 ## Overview
 
@@ -46,6 +46,7 @@ Inactive users are excluded from assignee selection and from the mail center use
   - To Do
   - In Progress
   - Done
+- Create Task modal from the board and table views
 - Drag and drop ordering with SortableJS
 - Task creation and editing
 - Task detail modal
@@ -53,6 +54,7 @@ Inactive users are excluded from assignee selection and from the mail center use
 - File attachments
 - Task duplication
 - Archive and restore tasks
+- Admin-only task deletion with soft deletes
 - Table view with DataTables
 - Status updates from the table view
 - Assigned by and assignee information
@@ -61,13 +63,16 @@ Inactive users are excluded from assignee selection and from the mail center use
 
 The admin sidebar includes a dedicated `Send Mail` section for task-delay communication.
 
+The sidebar also includes a `Mail System` toggle that controls whether automatic task-assignment emails are sent to the assignee when a task is created or duplicated.
+
 It supports:
 
 - Automated delayed-task mail to all active users
 - Automated delayed-task mail to one active user
 - Custom mail to one active user
+- Automatic assignee mail when the mail system is turned on
 
-The mail center only targets active users, and delayed-task reminders are based on overdue, incomplete tasks.
+The mail center only targets active users, and delayed-task reminders are based on overdue, incomplete tasks. Task emails use a polished summary layout with the full description shown in a wrapped content block so long text stays readable.
 
 ### Export System
 
@@ -158,8 +163,10 @@ After signing in with an authorized account:
 - Open the Users section to manage admin users
 - Open the Tasks section to view the Kanban board
 - Use category tabs to switch between task groups
+- Create tasks from the modal on the board or table view
 - Use the table view for a searchable, responsive list of tasks
 - Open archived tasks to restore previously archived items
+- Delete tasks as an admin when a task should be moved to soft delete
 - Open Export Tasks to download XLSX reports
 - Open Send Mail to notify active users about delayed work or send a custom email
 
@@ -174,6 +181,8 @@ Common admin routes currently in use:
 - `GET /admin/tasks`
 - `GET /admin/tasks/table`
 - `GET /admin/tasks/archived`
+- `GET /admin/tasks/create`
+- `DELETE /admin/tasks/{task}`
 - `GET /admin/tasks/export`
 - `GET /admin/tasks/export/download`
 - `GET /admin/task-categories`
@@ -181,6 +190,8 @@ Common admin routes currently in use:
 - `POST /admin/mail-center/delayed-all`
 - `POST /admin/mail-center/delayed-user`
 - `POST /admin/mail-center/custom`
+- `GET /admin/mail-system`
+- `PATCH /admin/mail-system`
 
 ## Tech Stack
 
@@ -216,6 +227,8 @@ Common admin routes currently in use:
 - Statuses are intentionally kept simple: Backlog, To Do, In Progress, and Done.
 - The export module is configured for XLSX output, not CSV.
 - The mail center only targets active users.
+- The mail system toggle controls assignment emails for newly created or duplicated tasks.
+- Task deletion is soft delete based, so deleted tasks remain in the database unless permanently removed later.
 
 ## License
 

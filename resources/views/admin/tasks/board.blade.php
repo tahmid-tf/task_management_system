@@ -3,6 +3,7 @@
 @section('content')
     @php
         $canManageTasks = auth()->user()?->hasAnyRole(['Admin', 'Team Member']);
+        $canDeleteTasks = auth()->user()?->hasRole('Admin');
     @endphp
     <div class="container-xl px-4 py-4">
         <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-4">
@@ -108,6 +109,12 @@
                                                             data-id="{{ $task->id }}">Duplicate</button>
                                                         <button type="button" class="btn btn-sm btn-outline-danger js-task-archive"
                                                             data-id="{{ $task->id }}">Archive</button>
+                                                        @if ($canDeleteTasks)
+                                                            <button type="button" class="btn btn-sm btn-outline-danger js-task-delete"
+                                                                data-id="{{ $task->id }}" data-title="{{ $task->title }}">
+                                                                Delete
+                                                            </button>
+                                                        @endif
                                                     </div>
                                                 @endif
                                             </div>
@@ -207,7 +214,11 @@
                     processData: false,
                     contentType: false,
                     success: function (response) {
-                        Swal.fire('Success', response.message, 'success').then(function () {
+                        const message = response.assignment_mail_sent
+                            ? `${response.message} Assignment email sent to the assignee.`
+                            : response.message;
+
+                        Swal.fire('Success', message, 'success').then(function () {
                             window.location.reload();
                         });
                     },
@@ -344,11 +355,42 @@
                 const taskId = $(this).data('id');
                 $.post('{{ url('/admin/tasks') }}/' + taskId + '/duplicate', {})
                     .done(function (response) {
-                        Swal.fire('Success', response.message, 'success').then(() => window.location.reload());
+                        const message = response.assignment_mail_sent
+                            ? `${response.message} Assignment email sent to the assignee.`
+                            : response.message;
+
+                        Swal.fire('Success', message, 'success').then(() => window.location.reload());
                     })
                     .fail(function () {
                         Swal.fire('Error', 'Unable to duplicate task.', 'error');
                     });
+            });
+
+            $(document).on('click', '.js-task-delete', function () {
+                const taskId = $(this).data('id');
+                const taskTitle = $(this).data('title') || 'this task';
+
+                Swal.fire({
+                    title: 'Delete this task?',
+                    text: `${taskTitle} will be moved to trash and removed from active views.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Delete',
+                    confirmButtonColor: '#d33'
+                }).then(function (result) {
+                    if (!result.isConfirmed) {
+                        return;
+                    }
+
+                    $.ajax({
+                        url: '{{ url('/admin/tasks') }}/' + taskId,
+                        method: 'DELETE'
+                    }).done(function (response) {
+                        Swal.fire('Success', response.message, 'success').then(() => window.location.reload());
+                    }).fail(function (xhr) {
+                        Swal.fire('Error', xhr.responseJSON?.message || 'Unable to delete task.', 'error');
+                    });
+                });
             });
         });
     </script>
