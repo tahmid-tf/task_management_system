@@ -1,6 +1,7 @@
 <?php
 namespace Database\Seeders;
 
+use App\Models\AppSetting;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -30,6 +31,8 @@ class DatabaseSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
         $adminUser->assignRole($adminRole);
+
+        AppSetting::setMailSystemEnabled(true);
 
         $defaultCategories = [
             ['name' => 'General', 'slug' => 'general', 'color' => '#0d6efd', 'position' => 1],

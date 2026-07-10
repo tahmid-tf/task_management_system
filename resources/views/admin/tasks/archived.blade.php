@@ -3,6 +3,7 @@
 @section('content')
     @php
         $canManageTasks = auth()->user()?->hasAnyRole(['Admin', 'Team Member']);
+        $canDeleteTasks = auth()->user()?->hasRole('Admin');
     @endphp
 
     <div class="container-xl px-4 py-4">
@@ -60,6 +61,11 @@
                                                 <button class="btn btn-outline-success js-task-unarchive"
                                                     data-id="{{ $task->id }}">Unarchive</button>
                                             @endif
+                                            @if ($canDeleteTasks)
+                                                <button class="btn btn-outline-danger js-task-delete"
+                                                    data-id="{{ $task->id }}"
+                                                    data-title="{{ $task->title }}">Delete</button>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
@@ -91,6 +97,15 @@
                 responsive: true,
                 autoWidth: false,
                 order: [],
+                columnDefs: [
+                    { targets: 0, responsivePriority: 1 },
+                    { targets: 7, responsivePriority: 1 },
+                    { targets: 2, responsivePriority: 2 },
+                    { targets: 3, responsivePriority: 3 },
+                    { targets: 4, responsivePriority: 4 },
+                    { targets: 5, responsivePriority: 5 },
+                    { targets: 6, responsivePriority: 6 },
+                ],
             });
 
             $(document).on('click', '.js-task-details', function () {
@@ -140,6 +155,33 @@
                         Swal.fire('Success', response.message, 'success').then(() => window.location.reload());
                     }).fail(function (xhr) {
                         Swal.fire('Error', xhr.responseJSON?.message || 'Unable to restore task.', 'error');
+                    });
+                });
+            });
+
+            $(document).on('click', '.js-task-delete', function () {
+                const taskId = $(this).data('id');
+                const taskTitle = $(this).data('title') || 'this task';
+
+                Swal.fire({
+                    title: 'Delete this task?',
+                    text: `${taskTitle} will be moved to trash and removed from active views.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Delete',
+                    confirmButtonColor: '#d33'
+                }).then(function (result) {
+                    if (!result.isConfirmed) {
+                        return;
+                    }
+
+                    $.ajax({
+                        url: '{{ url('/admin/tasks') }}/' + taskId,
+                        method: 'DELETE'
+                    }).done(function (response) {
+                        Swal.fire('Success', response.message, 'success').then(() => window.location.reload());
+                    }).fail(function (xhr) {
+                        Swal.fire('Error', xhr.responseJSON?.message || 'Unable to delete task.', 'error');
                     });
                 });
             });

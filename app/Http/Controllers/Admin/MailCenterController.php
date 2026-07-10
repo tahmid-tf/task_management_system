@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Throwable;
 
@@ -170,6 +171,7 @@ class MailCenterController extends Controller
     {
         return $tasks->map(static fn (Task $task) => [
             'title'       => $task->title,
+            'description' => $this->formatMailDescription($task->description),
             'category'    => $task->category?->name ?? 'No category',
             'priority'    => ucfirst($task->priority),
             'status'      => ucfirst(str_replace('_', ' ', $task->status)),
@@ -183,5 +185,17 @@ class MailCenterController extends Controller
         $query->whereNull('archived_at')
             ->where('status', '!=', 'done')
             ->whereDate('due_date', '<', today());
+    }
+
+    private function formatMailDescription(?string $description): string
+    {
+        return $description
+            ? Str::of($description)
+                ->replace("\r\n", "\n")
+                ->replace("\r", "\n")
+                ->replace('|', '¦')
+                ->trim()
+                ->toString()
+            : '-';
     }
 }

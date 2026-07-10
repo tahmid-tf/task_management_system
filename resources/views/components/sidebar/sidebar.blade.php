@@ -3,6 +3,8 @@
         @php
             $isDashboardActive = request()->routeIs('dashboard');
             $isMailCenterActive = request()->routeIs('admin.mail-center.*');
+            $isMailSystemActive = request()->routeIs('admin.mail-system.*');
+            $mailSystemEnabled = \App\Models\AppSetting::mailSystemEnabled();
             $isExportActive = request()->routeIs('admin.tasks.export*');
             $isUsersActive = request()->routeIs(
                 'admin.add-user',
@@ -28,22 +30,27 @@
             Send Mail
         </a>
 
+        <a class="nav-link d-flex align-items-center justify-content-between {{ $isMailSystemActive ? 'active' : '' }}"
+            href="{{ route('admin.mail-system.index') }}">
+            <span class="d-inline-flex align-items-center">
+                <div class="nav-link-icon"><i data-feather="toggle-right"></i></div>
+                Mail System
+            </span>
+            <span class="badge rounded-pill {{ $mailSystemEnabled ? 'bg-success' : 'bg-secondary' }}">
+                {{ $mailSystemEnabled ? 'On' : 'Off' }}
+            </span>
+        </a>
+
         <a class="nav-link {{ $isExportActive ? 'active' : '' }}" href="{{ route('admin.tasks.export') }}">
             <div class="nav-link-icon"><i data-feather="download"></i></div>
             Export Tasks
         </a>
 
-        <a class="nav-link {{ $isUsersActive ? '' : 'collapsed' }}" href="javascript:void(0);" data-bs-toggle="collapse"
-            data-bs-target="#collapseAddUser" aria-expanded="true"
-            aria-controls="collapseAddUser">
+        <a class="nav-link" href="javascript:void(0);" aria-expanded="true" aria-controls="collapseAddUser">
             <div class="nav-link-icon"><i data-feather="activity"></i></div>
             Users
-            <div class="sidenav-collapse-arrow">
-                <i class="fas fa-angle-down"></i>
-            </div>
         </a>
-        <div class="collapse show" id="collapseAddUser"
-            data-bs-parent="#accordionSidenav">
+        <div class="collapse show" id="collapseAddUser">
             <nav class="sidenav-menu-nested nav accordion" id="accordionSidenavPages">
                 <a class="nav-link {{ request()->routeIs('admin.add-user') ? 'active' : '' }}"
                     href="{{ route('admin.add-user') }}">
@@ -56,16 +63,11 @@
             </nav>
         </div>
 
-        <a class="nav-link {{ $isTasksActive ? '' : 'collapsed' }}" href="javascript:void(0);" data-bs-toggle="collapse"
-            data-bs-target="#collapseTasks" aria-expanded="true"
-            aria-controls="collapseTasks">
+        <a class="nav-link" href="javascript:void(0);" aria-expanded="true" aria-controls="collapseTasks">
             <div class="nav-link-icon"><i data-feather="layers"></i></div>
             Tasks
-            <div class="sidenav-collapse-arrow">
-                <i class="fas fa-angle-down"></i>
-            </div>
         </a>
-        <div class="collapse show" id="collapseTasks" data-bs-parent="#accordionSidenav">
+        <div class="collapse show" id="collapseTasks">
             <nav class="sidenav-menu-nested nav accordion" id="accordionSidenavTaskPages">
                 <a class="nav-link {{ request()->routeIs('admin.tasks.board') ? 'active' : '' }}"
                     href="{{ route('admin.tasks.board') }}">

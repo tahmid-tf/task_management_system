@@ -1,75 +1,82 @@
 # Task Management Admin
 
-Task Management Admin is a Laravel 13 application for structured admin operations, user management, and task tracking. It combines a polished SB Admin style interface with role-based access control, responsive data tables, SweetAlert2 interactions, and Excel exports for task reporting.
+Task Management Admin is a Laravel 13 application for structured admin operations, user management, task tracking, delayed-task email reminders, and exportable reporting. It combines a polished admin layout with role-based access control, responsive DataTables, SweetAlert2 interactions, SortableJS task ordering, modal-based task creation, admin-only soft delete support, and XLSX exports.
 
 ## Overview
 
-The application currently includes two main areas:
+The application currently focuses on four production-ready areas:
 
+- Admin authentication and role-based access
 - Admin user management
-- Task management with a Kanban board, table view, archived tasks, categories, and XLSX exports
+- Task management with a Kanban board, table view, archive, and categories
+- Mail center tools for delayed-task reminders and custom emails
 
-The UI is organized around a persistent admin layout with sidebar navigation, active route highlighting, and role-aware access using Spatie Laravel Permission.
+The interface is organized around a persistent admin layout with active route highlighting and Spatie Laravel Permission for access control.
 
-## Key Features
+## Implemented Features
 
-- Authentication with Laravel Breeze
-- Role-based access control with Spatie Permission
-- Admin sidebar with active route highlighting
-- Responsive user management workflow
-- Task board with category tabs
-- Drag and drop task ordering with SortableJS
-- Task table with DataTables and responsive behavior
-- Archived task view with restore support
-- SweetAlert2 confirmations and detail modals
-- XLSX export system for task reports
+### Authentication and Access
 
-## Roles
+- Laravel Breeze authentication
+- Verified admin routes
+- Spatie roles and permissions
+- Roles currently in use:
+  - Admin
+  - Team Member
+  - Viewer
 
-The application currently uses these roles:
+### User Management
 
-- Admin
-- Team Member
-- Viewer
-
-Access is restricted by role so that sensitive task actions remain available only to authorized users.
-
-## User Management
-
-The admin user module supports:
-
-- Create user
-- Edit user
-- View user list
+- Create users
+- Edit users
+- View users in a responsive DataTable
 - Toggle active and inactive status
-- Upload profile image
-- Assign Spatie roles
+- Upload profile images
 - Store phone number and address
+- Assign roles during create and edit
 
-Inactive users are excluded from new task assignee selections.
+Inactive users are excluded from assignee selection and from the mail center user lists.
 
-## Task Management
+### Task Management
 
-The task module supports:
-
-- Task board grouped by category
-- Horizontal category tabs
-- Board columns: Backlog, To Do, In Progress, Done
+- Kanban board organized by task category
+- Horizontal category tabs for quick switching
+- Board columns:
+  - Backlog
+  - To Do
+  - In Progress
+  - Done
+- Create Task modal from the board and table views
+- Drag and drop ordering with SortableJS
 - Task creation and editing
-- Quick create from the board
-- Drag and drop ordering between board columns
 - Task detail modal
-- Comments
-- Attachments
-- Activity history
+- Comments and activity history
+- File attachments
 - Task duplication
-- Task archive and restore
-- Assigned by and assignee display
-- Status changes from the table view
+- Archive and restore tasks
+- Admin-only task deletion with soft deletes
+- Table view with DataTables
+- Status updates from the table view
+- Assigned by and assignee information
 
-## Export System
+### Mail Center
 
-The export module uses `maatwebsite/excel` and downloads `.xlsx` files.
+The admin sidebar includes a dedicated `Send Mail` section for task-delay communication.
+
+The sidebar also includes a `Mail System` toggle that controls whether automatic task-assignment emails are sent to the assignee when a task is created or duplicated.
+
+It supports:
+
+- Automated delayed-task mail to all active users
+- Automated delayed-task mail to one active user
+- Custom mail to one active user
+- Automatic assignee mail when the mail system is turned on
+
+The mail center only targets active users, and delayed-task reminders are based on overdue, incomplete tasks. Task emails use a polished summary layout with the full description shown in a wrapped content block so long text stays readable.
+
+### Export System
+
+The export module uses `maatwebsite/excel` and generates `.xlsx` files.
 
 Supported export modes:
 
@@ -83,9 +90,9 @@ Supported export modes:
 Exported spreadsheets include:
 
 - Auto-sized columns
-- Styled header row
-- Background-colored status cells
-- Background-colored priority cells
+- Styled header rows
+- Colored status cells
+- Colored priority cells
 
 ## Requirements
 
@@ -111,7 +118,7 @@ php -r "file_exists('.env') || copy('.env.example', '.env');"
 php artisan key:generate
 ```
 
-Configure your database connection in `.env`, then run migrations and seeders:
+Configure your database and mail settings in `.env`, then run migrations and seeders:
 
 ```bash
 php artisan migrate --seed
@@ -156,23 +163,35 @@ After signing in with an authorized account:
 - Open the Users section to manage admin users
 - Open the Tasks section to view the Kanban board
 - Use category tabs to switch between task groups
+- Create tasks from the modal on the board or table view
 - Use the table view for a searchable, responsive list of tasks
 - Open archived tasks to restore previously archived items
+- Delete tasks as an admin when a task should be moved to soft delete
 - Open Export Tasks to download XLSX reports
+- Open Send Mail to notify active users about delayed work or send a custom email
 
 ## Routes
 
 Common admin routes currently in use:
 
+- `GET /dashboard`
 - `GET /admin/view-users`
 - `GET /admin/add-user`
 - `POST /admin/add-user`
 - `GET /admin/tasks`
 - `GET /admin/tasks/table`
 - `GET /admin/tasks/archived`
+- `GET /admin/tasks/create`
+- `DELETE /admin/tasks/{task}`
 - `GET /admin/tasks/export`
 - `GET /admin/tasks/export/download`
 - `GET /admin/task-categories`
+- `GET /admin/mail-center`
+- `POST /admin/mail-center/delayed-all`
+- `POST /admin/mail-center/delayed-user`
+- `POST /admin/mail-center/custom`
+- `GET /admin/mail-system`
+- `PATCH /admin/mail-system`
 
 ## Tech Stack
 
@@ -190,12 +209,14 @@ Common admin routes currently in use:
 ## Project Structure
 
 - `app/Http/Controllers/Admin/UserController.php` - admin user CRUD and status control
-- `app/Http/Controllers/Admin/TaskController.php` - task board, task CRUD, archive, comments, and attachments
+- `app/Http/Controllers/Admin/TaskController.php` - task board, task CRUD, archive, comments, attachments, and ordering
 - `app/Http/Controllers/Admin/TaskCategoryController.php` - task category management
 - `app/Http/Controllers/Admin/TaskExportController.php` - Excel export entry points
+- `app/Http/Controllers/Admin/MailCenterController.php` - delayed-task reminders and custom email sending
 - `app/Exports/TasksExport.php` - reusable XLSX export query and formatting logic
 - `resources/views/admin/users/` - user management views
 - `resources/views/admin/tasks/` - task board, table, archive, category, and export views
+- `resources/views/admin/mail-center/` - mail center dashboard and forms
 - `resources/views/components/sidebar/sidebar.blade.php` - admin navigation
 - `routes/user_routes/admin.php` - admin route definitions
 
@@ -205,6 +226,9 @@ Common admin routes currently in use:
 - The board uses category tabs as the main navigation model for tasks.
 - Statuses are intentionally kept simple: Backlog, To Do, In Progress, and Done.
 - The export module is configured for XLSX output, not CSV.
+- The mail center only targets active users.
+- The mail system toggle controls assignment emails for newly created or duplicated tasks.
+- Task deletion is soft delete based, so deleted tasks remain in the database unless permanently removed later.
 
 ## License
 

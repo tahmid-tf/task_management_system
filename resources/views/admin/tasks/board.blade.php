@@ -3,6 +3,7 @@
 @section('content')
     @php
         $canManageTasks = auth()->user()?->hasAnyRole(['Admin', 'Team Member']);
+        $canDeleteTasks = auth()->user()?->hasRole('Admin');
     @endphp
     <div class="container-xl px-4 py-4">
         <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-4">
@@ -14,7 +15,7 @@
                 <a href="{{ route('admin.tasks.table') }}" class="btn btn-outline-primary">Table View</a>
                 @if ($canManageTasks)
                     <a href="{{ route('admin.task-categories.index') }}" class="btn btn-outline-secondary">Manage Categories</a>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#quickCreateTaskModal">Quick Create</button>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTaskModal">Create Task</button>
                 @endif
             </div>
         </div>
@@ -108,6 +109,12 @@
                                                             data-id="{{ $task->id }}">Duplicate</button>
                                                         <button type="button" class="btn btn-sm btn-outline-danger js-task-archive"
                                                             data-id="{{ $task->id }}">Archive</button>
+                                                        @if ($canDeleteTasks)
+                                                            <button type="button" class="btn btn-sm btn-outline-danger js-task-delete"
+                                                                data-id="{{ $task->id }}" data-title="{{ $task->title }}">
+                                                                Delete
+                                                            </button>
+                                                        @endif
                                                     </div>
                                                 @endif
                                             </div>
@@ -125,74 +132,12 @@
     </div>
 
     @if ($canManageTasks)
-        <div class="modal fade" id="quickCreateTaskModal" tabindex="-1">
-            <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                <div class="modal-content">
-                    <form id="quickCreateTaskForm" enctype="multipart/form-data">
-                        @csrf
-                        <div class="modal-header">
-                            <h5 class="modal-title">Quick Create Task</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Title</label>
-                                    <input type="text" name="title" class="form-control" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Category</label>
-                                    <select name="task_category_id" class="form-select" required>
-                                        @foreach ($categories as $category)
-                                            <option value="{{ $category->id }}" @selected($selectedCategory?->id === $category->id)>
-                                                {{ $category->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Status</label>
-                                    <select name="status" class="form-select">
-                                        @foreach ($statuses as $key => $label)
-                                            <option value="{{ $key }}">{{ $label }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Priority</label>
-                                    <select name="priority" class="form-select">
-                                        @foreach ($priorities as $key => $label)
-                                            <option value="{{ $key }}">{{ $label }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Assignee</label>
-                                    <select name="assigned_to" class="form-select">
-                                        <option value="">Unassigned</option>
-                                        @foreach ($users as $user)
-                                            <option value="{{ $user->id }}">{{ $user->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Due Date</label>
-                                    <input type="date" name="due_date" class="form-control">
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label">Description</label>
-                                    <textarea name="description" class="form-control" rows="4"></textarea>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Create Task</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+        @include('admin.tasks._create-modal', [
+            'modalId' => 'createTaskModal',
+            'formId' => 'createTaskForm',
+            'defaultCategoryId' => $selectedCategory?->id,
+            'defaultStatus' => 'todo',
+        ])
     @endif
 
     <div class="modal fade" id="taskDetailsModal" tabindex="-1">
@@ -259,8 +204,18 @@
                 });
             }
 
-            $('#quickCreateTaskForm').on('submit', function (e) {
+            $('#createTaskForm').on('submit', function (e) {
                 e.preventDefault();
+
+                const form = $(this);
+                const submitButton = form.find('.js-task-submit');
+                const originalLabel = submitButton.data('original-label') || submitButton.text().trim();
+                const loadingLabel = submitButton.data('loading-label') || 'Creating...';
+
+                submitButton
+                    .data('original-label', originalLabel)
+                    .prop('disabled', true)
+                    .html(`<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>${loadingLabel}`);
 
                 $.ajax({
                     url: '{{ route('admin.tasks.store') }}',
@@ -269,15 +224,29 @@
                     processData: false,
                     contentType: false,
                     success: function (response) {
-                        Swal.fire('Success', response.message, 'success').then(function () {
+                        const message = response.assignment_mail_sent
+                            ? `${response.message} Assignment email sent to the assignee.`
+                            : response.message;
+
+                        Swal.fire('Success', message, 'success').then(function () {
                             window.location.reload();
                         });
                     },
                     error: function (xhr) {
                         Swal.fire('Error', xhr.responseJSON?.message || 'Unable to create task.', 'error');
+                    },
+                    complete: function () {
+                        submitButton
+                            .prop('disabled', false)
+                            .html(submitButton.data('original-label') || originalLabel);
                     }
                 });
             });
+
+            @if (request()->boolean('create_task'))
+                const createTaskModal = new bootstrap.Modal(document.getElementById('createTaskModal'));
+                createTaskModal.show();
+            @endif
 
             $(document).on('click', '.js-task-details', function () {
                 $.get('{{ url('/admin/tasks') }}/' + $(this).data('id') + '/details', function (response) {
@@ -401,11 +370,42 @@
                 const taskId = $(this).data('id');
                 $.post('{{ url('/admin/tasks') }}/' + taskId + '/duplicate', {})
                     .done(function (response) {
-                        Swal.fire('Success', response.message, 'success').then(() => window.location.reload());
+                        const message = response.assignment_mail_sent
+                            ? `${response.message} Assignment email sent to the assignee.`
+                            : response.message;
+
+                        Swal.fire('Success', message, 'success').then(() => window.location.reload());
                     })
                     .fail(function () {
                         Swal.fire('Error', 'Unable to duplicate task.', 'error');
                     });
+            });
+
+            $(document).on('click', '.js-task-delete', function () {
+                const taskId = $(this).data('id');
+                const taskTitle = $(this).data('title') || 'this task';
+
+                Swal.fire({
+                    title: 'Delete this task?',
+                    text: `${taskTitle} will be moved to trash and removed from active views.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Delete',
+                    confirmButtonColor: '#d33'
+                }).then(function (result) {
+                    if (!result.isConfirmed) {
+                        return;
+                    }
+
+                    $.ajax({
+                        url: '{{ url('/admin/tasks') }}/' + taskId,
+                        method: 'DELETE'
+                    }).done(function (response) {
+                        Swal.fire('Success', response.message, 'success').then(() => window.location.reload());
+                    }).fail(function (xhr) {
+                        Swal.fire('Error', xhr.responseJSON?.message || 'Unable to delete task.', 'error');
+                    });
+                });
             });
         });
     </script>

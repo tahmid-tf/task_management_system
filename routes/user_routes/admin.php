@@ -7,6 +7,8 @@ Route::middleware(['auth', 'verified', 'role:Admin'])->prefix('admin')->group(fu
     Route::post('/mail-center/delayed-all', [\App\Http\Controllers\Admin\MailCenterController::class, 'sendDelayedToAll'])->name('admin.mail-center.delayed-all');
     Route::post('/mail-center/delayed-user', [\App\Http\Controllers\Admin\MailCenterController::class, 'sendDelayedToUser'])->name('admin.mail-center.delayed-user');
     Route::post('/mail-center/custom', [\App\Http\Controllers\Admin\MailCenterController::class, 'sendCustomMail'])->name('admin.mail-center.custom');
+    Route::get('/mail-system', [\App\Http\Controllers\Admin\MailSystemController::class, 'index'])->name('admin.mail-system.index');
+    Route::patch('/mail-system', [\App\Http\Controllers\Admin\MailSystemController::class, 'update'])->name('admin.mail-system.update');
 
     // --------------------------- view users ---------------------------
     Route::get('/view-users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('admin.view-users');
@@ -39,6 +41,10 @@ Route::middleware(['auth', 'verified', 'role:Admin|Team Member|Viewer'])->prefix
         Route::post('/tasks/{task}/duplicate', [\App\Http\Controllers\Admin\TaskController::class, 'duplicate'])->name('admin.tasks.duplicate');
         Route::post('/tasks/{task}/comments', [\App\Http\Controllers\Admin\TaskController::class, 'comment'])->name('admin.tasks.comments.store');
         Route::post('/tasks/{task}/attachments', [\App\Http\Controllers\Admin\TaskController::class, 'attachment'])->name('admin.tasks.attachments.store');
+
+        Route::delete('/tasks/{task}', [\App\Http\Controllers\Admin\TaskController::class, 'destroy'])
+            ->middleware('role:Admin')
+            ->name('admin.tasks.destroy');
 
         Route::get('/task-categories', [\App\Http\Controllers\Admin\TaskCategoryController::class, 'index'])->name('admin.task-categories.index');
         Route::post('/task-categories', [\App\Http\Controllers\Admin\TaskCategoryController::class, 'store'])->name('admin.task-categories.store');

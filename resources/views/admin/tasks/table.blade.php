@@ -3,6 +3,7 @@
 @section('content')
     @php
         $canManageTasks = auth()->user()?->hasAnyRole(['Admin', 'Team Member']);
+        $canDeleteTasks = auth()->user()?->hasRole('Admin');
     @endphp
     <div class="container-xl px-4 py-4">
         <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-4">
@@ -13,7 +14,9 @@
             <div class="d-flex gap-2">
                 <a href="{{ route('admin.tasks.board') }}" class="btn btn-outline-primary">Board View</a>
                 @if ($canManageTasks)
-                    <a href="{{ route('admin.tasks.create') }}" class="btn btn-primary">Create Task</a>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTaskModal">
+                        Create Task
+                    </button>
                 @endif
             </div>
         </div>
@@ -63,6 +66,11 @@
                                                         href="{{ route('admin.tasks.edit', $task) }}">Edit</a>
                                                     <button class="btn btn-outline-dark js-task-archive"
                                                         data-id="{{ $task->id }}">Archive</button>
+                                                    @if ($canDeleteTasks)
+                                                        <button class="btn btn-outline-danger js-task-delete"
+                                                            data-id="{{ $task->id }}"
+                                                            data-title="{{ $task->title }}">Delete</button>
+                                                    @endif
                                                 @endif
                                             </div>
 
@@ -104,6 +112,15 @@
             </div>
         </div>
     </div>
+
+    @if ($canManageTasks)
+        @include('admin.tasks._create-modal', [
+            'modalId' => 'createTaskModal',
+            'formId' => 'createTaskForm',
+            'defaultCategoryId' => $categories->first()->id ?? null,
+            'defaultStatus' => 'todo',
+        ])
+    @endif
 @endsection
 
 @push('scripts')
@@ -113,10 +130,58 @@
                 responsive: true,
                 autoWidth: false,
                 order: [],
+                columnDefs: [
+                    { targets: 0, responsivePriority: 1 },
+                    { targets: 7, responsivePriority: 1 },
+                    { targets: 2, responsivePriority: 2 },
+                    { targets: 3, responsivePriority: 3 },
+                    { targets: 4, responsivePriority: 4 },
+                    { targets: 5, responsivePriority: 5 },
+                    { targets: 6, responsivePriority: 6 },
+                ],
             });
 
             $('.js-task-status-change').each(function () {
                 $(this).data('previous', $(this).val());
+            });
+
+            $('#createTaskForm').on('submit', function (e) {
+                e.preventDefault();
+
+                const form = $(this);
+                const submitButton = form.find('.js-task-submit');
+                const originalLabel = submitButton.data('original-label') || submitButton.text().trim();
+                const loadingLabel = submitButton.data('loading-label') || 'Creating...';
+
+                submitButton
+                    .data('original-label', originalLabel)
+                    .prop('disabled', true)
+                    .html(`<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>${loadingLabel}`);
+
+                $.ajax({
+                    url: '{{ route('admin.tasks.store') }}',
+                    method: 'POST',
+                    data: new FormData(this),
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        const message = response.assignment_mail_sent
+                            ? `${response.message} Assignment email sent to the assignee.`
+                            : response.message;
+
+                        Swal.fire('Success', message, 'success').then(function () {
+                            window.location.reload();
+                        });
+                    },
+                    error: function (xhr) {
+                        Swal.fire('Error', xhr.responseJSON?.message || 'Unable to create task.', 'error');
+                    },
+                    complete: function () {
+                        submitButton
+                            .prop('disabled', false)
+                            .html(submitButton.data('original-label') || originalLabel);
+                    }
+                });
             });
 
             $(document).on('click', '.js-task-details', function () {
@@ -163,7 +228,34 @@
                         })
                         .fail(function () {
                             Swal.fire('Error', 'Unable to archive task.', 'error');
-                        });
+                    });
+                });
+            });
+
+            $(document).on('click', '.js-task-delete', function () {
+                const taskId = $(this).data('id');
+                const taskTitle = $(this).data('title') || 'this task';
+
+                Swal.fire({
+                    title: 'Delete this task?',
+                    text: `${taskTitle} will be moved to trash and removed from active views.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Delete',
+                    confirmButtonColor: '#d33'
+                }).then(function (result) {
+                    if (!result.isConfirmed) {
+                        return;
+                    }
+
+                    $.ajax({
+                        url: '{{ url('/admin/tasks') }}/' + taskId,
+                        method: 'DELETE'
+                    }).done(function (response) {
+                        Swal.fire('Success', response.message, 'success').then(() => window.location.reload());
+                    }).fail(function (xhr) {
+                        Swal.fire('Error', xhr.responseJSON?.message || 'Unable to delete task.', 'error');
+                    });
                 });
             });
 
@@ -196,7 +288,7 @@
                         }
                     }).done(function (response) {
                         select.data('previous', status);
-                        Swal.fire('Success', response.message, 'success');
+                        Swal.fire('Success', response.message, 'success').then(() => window.location.reload());
                     }).fail(function (xhr) {
                         select.val(select.data('previous') || select.find('option:first').val());
                         Swal.fire('Error', xhr.responseJSON?.message || 'Unable to change task status.', 'error');
