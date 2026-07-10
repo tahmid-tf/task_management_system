@@ -2,6 +2,7 @@
     <div class="nav accordion" id="accordionSidenav">
         @php
             $isDashboardActive = request()->routeIs('dashboard');
+            $isMailCenterActive = request()->routeIs('admin.mail-center.*');
             $isExportActive = request()->routeIs('admin.tasks.export*');
             $isUsersActive = request()->routeIs(
                 'admin.add-user',
@@ -20,6 +21,11 @@
         <a class="nav-link {{ $isDashboardActive ? 'active' : '' }}" href="{{ route('dashboard') }}">
             <div class="nav-link-icon"><i data-feather="bar-chart"></i></div>
             Dashboard
+        </a>
+
+        <a class="nav-link {{ $isMailCenterActive ? 'active' : '' }}" href="{{ route('admin.mail-center.index') }}">
+            <div class="nav-link-icon"><i data-feather="mail"></i></div>
+            Send Mail
         </a>
 
         <a class="nav-link {{ $isExportActive ? 'active' : '' }}" href="{{ route('admin.tasks.export') }}">
