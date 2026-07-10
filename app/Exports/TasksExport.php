@@ -26,13 +26,16 @@ class TasksExport implements FromQuery, WithMapping, WithHeadings, ShouldAutoSiz
     {
         return Task::query()
             ->with(['category', 'creator', 'assignee', 'labels'])
+            ->when(! empty($this->filters['scope_to_user']) && ! empty($this->filters['user_id']), function (Builder $query) {
+                $query->where('assigned_to', $this->filters['user_id']);
+            })
             ->when(($this->filters['mode'] ?? null) === 'date' && ! empty($this->filters['date_from']) && ! empty($this->filters['date_to']), function (Builder $query) {
                 $from = Carbon::parse($this->filters['date_from'])->startOfDay();
                 $to = Carbon::parse($this->filters['date_to'])->endOfDay();
 
                 $query->whereBetween('created_at', [$from, $to]);
             })
-            ->when(($this->filters['mode'] ?? null) === 'user' && ! empty($this->filters['user_id']), function (Builder $query) {
+            ->when(($this->filters['mode'] ?? null) === 'user' && ! empty($this->filters['user_id']) && empty($this->filters['scope_to_user']), function (Builder $query) {
                 $query->where('assigned_to', $this->filters['user_id']);
             })
             ->when(($this->filters['mode'] ?? null) === 'status' && ! empty($this->filters['status']), function (Builder $query) {

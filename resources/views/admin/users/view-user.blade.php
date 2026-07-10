@@ -201,6 +201,7 @@
                 const userName = $button.data('name');
                 const nextStatus = currentStatus === 'active' ? 'inactive' : 'active';
                 const actionText = nextStatus === 'active' ? 'activate' : 'deactivate';
+                const originalHtml = $button.html();
 
                 Swal.fire({
                     icon: 'warning',
@@ -214,11 +215,16 @@
                         return;
                     }
 
+                    $button
+                        .prop('disabled', true)
+                        .addClass('disabled')
+                        .html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>');
+
                     $.ajax({
                         url: url,
                         type: 'PATCH',
                         headers: {
-                            'X-CSRF-TOKEN': $('input[name="_token"]').val(),
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
                             'X-Requested-With': 'XMLHttpRequest',
                         },
                         success: function(response) {
@@ -235,6 +241,8 @@
                                 $button.html('<i data-feather="check-circle" width="18" height="18"></i>');
                             }
 
+                            $button.prop('disabled', false).removeClass('disabled');
+
                             if (typeof feather !== 'undefined') {
                                 feather.replace();
                             }
@@ -248,6 +256,15 @@
                         },
                         error: function(xhr) {
                             const response = xhr.responseJSON || {};
+
+                            $button
+                                .prop('disabled', false)
+                                .removeClass('disabled')
+                                .html(originalHtml);
+
+                            if (typeof feather !== 'undefined') {
+                                feather.replace();
+                            }
 
                             Swal.fire({
                                 icon: 'error',

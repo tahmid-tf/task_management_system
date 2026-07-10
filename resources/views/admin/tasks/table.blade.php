@@ -2,8 +2,9 @@
 
 @section('content')
     @php
-        $canManageTasks = auth()->user()?->hasAnyRole(['Admin', 'Team Member']);
-        $canDeleteTasks = auth()->user()?->hasRole('Admin');
+        $isAdmin = $isAdmin ?? auth()->user()?->hasRole('Admin');
+        $isTeamMember = $isTeamMember ?? auth()->user()?->hasRole('Team Member');
+        $canChangeStatuses = $canChangeStatuses ?? ($isAdmin || $isTeamMember);
     @endphp
     <div class="container-xl px-4 py-4">
         <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-4">
@@ -13,7 +14,7 @@
             </div>
             <div class="d-flex gap-2">
                 <a href="{{ route('admin.tasks.board') }}" class="btn btn-outline-primary">Board View</a>
-                @if ($canManageTasks)
+                @if ($isAdmin)
                     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTaskModal">
                         Create Task
                     </button>
@@ -61,20 +62,18 @@
                                             <div class="btn-group btn-group-sm">
                                                 <button class="btn btn-outline-primary js-task-details"
                                                     data-id="{{ $task->id }}">View</button>
-                                                @if ($canManageTasks)
+                                                @if ($isAdmin)
                                                     <a class="btn btn-outline-secondary"
                                                         href="{{ route('admin.tasks.edit', $task) }}">Edit</a>
                                                     <button class="btn btn-outline-dark js-task-archive"
                                                         data-id="{{ $task->id }}">Archive</button>
-                                                    @if ($canDeleteTasks)
-                                                        <button class="btn btn-outline-danger js-task-delete"
-                                                            data-id="{{ $task->id }}"
-                                                            data-title="{{ $task->title }}">Delete</button>
-                                                    @endif
+                                                    <button class="btn btn-outline-danger js-task-delete"
+                                                        data-id="{{ $task->id }}"
+                                                        data-title="{{ $task->title }}">Delete</button>
                                                 @endif
                                             </div>
 
-                                            @if ($canManageTasks)
+                                            @if ($canChangeStatuses)
                                                 <select class="form-select form-select-sm js-task-status-change"
                                                     data-id="{{ $task->id }}"
                                                     data-category-id="{{ $task->task_category_id }}"
@@ -113,7 +112,7 @@
         </div>
     </div>
 
-    @if ($canManageTasks)
+    @if ($isAdmin)
         @include('admin.tasks._create-modal', [
             'modalId' => 'createTaskModal',
             'formId' => 'createTaskForm',

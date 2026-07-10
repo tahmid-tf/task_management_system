@@ -18,7 +18,7 @@ Route::get('/test-smtp', function () {
 });
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified', 'active_account'])
     ->name('dashboard');
 
 require __DIR__ . '/auth.php';
