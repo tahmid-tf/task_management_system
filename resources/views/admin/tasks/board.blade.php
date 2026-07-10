@@ -14,7 +14,7 @@
                 <a href="{{ route('admin.tasks.table') }}" class="btn btn-outline-primary">Table View</a>
                 @if ($canManageTasks)
                     <a href="{{ route('admin.task-categories.index') }}" class="btn btn-outline-secondary">Manage Categories</a>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#quickCreateTaskModal">Quick Create</button>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTaskModal">Create Task</button>
                 @endif
             </div>
         </div>
@@ -125,74 +125,12 @@
     </div>
 
     @if ($canManageTasks)
-        <div class="modal fade" id="quickCreateTaskModal" tabindex="-1">
-            <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                <div class="modal-content">
-                    <form id="quickCreateTaskForm" enctype="multipart/form-data">
-                        @csrf
-                        <div class="modal-header">
-                            <h5 class="modal-title">Quick Create Task</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Title</label>
-                                    <input type="text" name="title" class="form-control" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Category</label>
-                                    <select name="task_category_id" class="form-select" required>
-                                        @foreach ($categories as $category)
-                                            <option value="{{ $category->id }}" @selected($selectedCategory?->id === $category->id)>
-                                                {{ $category->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Status</label>
-                                    <select name="status" class="form-select">
-                                        @foreach ($statuses as $key => $label)
-                                            <option value="{{ $key }}">{{ $label }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Priority</label>
-                                    <select name="priority" class="form-select">
-                                        @foreach ($priorities as $key => $label)
-                                            <option value="{{ $key }}">{{ $label }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Assignee</label>
-                                    <select name="assigned_to" class="form-select">
-                                        <option value="">Unassigned</option>
-                                        @foreach ($users as $user)
-                                            <option value="{{ $user->id }}">{{ $user->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Due Date</label>
-                                    <input type="date" name="due_date" class="form-control">
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label">Description</label>
-                                    <textarea name="description" class="form-control" rows="4"></textarea>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Create Task</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+        @include('admin.tasks._create-modal', [
+            'modalId' => 'createTaskModal',
+            'formId' => 'createTaskForm',
+            'defaultCategoryId' => $selectedCategory?->id,
+            'defaultStatus' => 'todo',
+        ])
     @endif
 
     <div class="modal fade" id="taskDetailsModal" tabindex="-1">
@@ -259,7 +197,7 @@
                 });
             }
 
-            $('#quickCreateTaskForm').on('submit', function (e) {
+            $('#createTaskForm').on('submit', function (e) {
                 e.preventDefault();
 
                 $.ajax({
@@ -278,6 +216,11 @@
                     }
                 });
             });
+
+            @if (request()->boolean('create_task'))
+                const createTaskModal = new bootstrap.Modal(document.getElementById('createTaskModal'));
+                createTaskModal.show();
+            @endif
 
             $(document).on('click', '.js-task-details', function () {
                 $.get('{{ url('/admin/tasks') }}/' + $(this).data('id') + '/details', function (response) {

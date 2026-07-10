@@ -13,7 +13,9 @@
             <div class="d-flex gap-2">
                 <a href="{{ route('admin.tasks.board') }}" class="btn btn-outline-primary">Board View</a>
                 @if ($canManageTasks)
-                    <a href="{{ route('admin.tasks.create') }}" class="btn btn-primary">Create Task</a>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTaskModal">
+                        Create Task
+                    </button>
                 @endif
             </div>
         </div>
@@ -104,6 +106,15 @@
             </div>
         </div>
     </div>
+
+    @if ($canManageTasks)
+        @include('admin.tasks._create-modal', [
+            'modalId' => 'createTaskModal',
+            'formId' => 'createTaskForm',
+            'defaultCategoryId' => $categories->first()->id ?? null,
+            'defaultStatus' => 'todo',
+        ])
+    @endif
 @endsection
 
 @push('scripts')
@@ -117,6 +128,26 @@
 
             $('.js-task-status-change').each(function () {
                 $(this).data('previous', $(this).val());
+            });
+
+            $('#createTaskForm').on('submit', function (e) {
+                e.preventDefault();
+
+                $.ajax({
+                    url: '{{ route('admin.tasks.store') }}',
+                    method: 'POST',
+                    data: new FormData(this),
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        Swal.fire('Success', response.message, 'success').then(function () {
+                            window.location.reload();
+                        });
+                    },
+                    error: function (xhr) {
+                        Swal.fire('Error', xhr.responseJSON?.message || 'Unable to create task.', 'error');
+                    }
+                });
             });
 
             $(document).on('click', '.js-task-details', function () {

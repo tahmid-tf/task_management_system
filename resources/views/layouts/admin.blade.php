@@ -26,6 +26,12 @@
 </head>
 
 <body class="nav-fixed">
+    @php
+        $authUser = auth()->user();
+        $authUserName = $authUser?->name ?? 'User';
+        $authUserEmail = $authUser?->email ?? '';
+        $authUserImage = $authUser?->image ? asset('storage/' . $authUser->image) : asset('assets/img/illustrations/profiles/profile-1.png');
+    @endphp
     <nav class="topnav navbar navbar-expand shadow justify-content-between justify-content-sm-start navbar-light bg-white"
         id="sidenavAccordion">
         <!-- Sidenav Toggle Button-->
@@ -238,30 +244,43 @@
             <li class="nav-item dropdown no-caret dropdown-user me-3 me-lg-4">
                 <a class="btn btn-icon btn-transparent-dark dropdown-toggle" id="navbarDropdownUserImage"
                     href="javascript:void(0);" role="button" data-bs-toggle="dropdown" aria-haspopup="true"
-                    aria-expanded="false"><img class="img-fluid"
-                        src="assets/img/illustrations/profiles/profile-1.png" /></a>
+                    aria-expanded="false">
+                    <img
+                        class="rounded-circle"
+                        src="{{ $authUserImage }}"
+                        alt="{{ $authUserName }}"
+                        style="width: 2.25rem; height: 2.25rem; object-fit: cover; display: block;"
+                    >
+                </a>
                 <div class="dropdown-menu dropdown-menu-end border-0 shadow animated--fade-in-up"
                     aria-labelledby="navbarDropdownUserImage">
-                    <h6 class="dropdown-header d-flex align-items-center">
-                        <img class="dropdown-user-img" src="assets/img/illustrations/profiles/profile-1.png" />
-                        <div class="dropdown-user-details">
-                            <div class="dropdown-user-details-name">Valerie Luna</div>
-                            <div class="dropdown-user-details-email">vluna@aol.com</div>
+                    <div class="dropdown-header d-flex align-items-center px-3 py-3">
+                        <div class="flex-shrink-0" style="width: 2.5rem; height: 2.5rem;">
+                            <img class="rounded-circle w-100 h-100"
+                                src="{{ $authUserImage }}" alt="{{ $authUserName }}"
+                                style="object-fit: cover; display: block;" />
                         </div>
-                    </h6>
+                        <div class="dropdown-user-details ms-3 text-start">
+                            <div class="dropdown-user-details-name">{{ $authUserName }}</div>
+                            <div class="dropdown-user-details-email">{{ $authUserEmail }}</div>
+                        </div>
+                    </div>
                     <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="#!">
+                    <a class="dropdown-item" href="{{ route('profile.edit') }}">
                         <div class="dropdown-item-icon">
                             <i data-feather="settings"></i>
                         </div>
                         Account
                     </a>
-                    <a class="dropdown-item" href="#!">
-                        <div class="dropdown-item-icon">
-                            <i data-feather="log-out"></i>
-                        </div>
-                        Logout
-                    </a>
+                    <form id="logoutForm" method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="button" class="dropdown-item logout-trigger w-100 text-start">
+                            <div class="dropdown-item-icon">
+                                <i data-feather="log-out"></i>
+                            </div>
+                            Logout
+                        </button>
+                    </form>
                 </div>
             </li>
         </ul>
@@ -282,7 +301,7 @@
                 <div class="sidenav-footer">
                     <div class="sidenav-footer-content">
                         <div class="sidenav-footer-subtitle">Logged in as:</div>
-                        <div class="sidenav-footer-title">Valerie Luna</div>
+                        <div class="sidenav-footer-title">{{ $authUserName }}</div>
                     </div>
                 </div>
             </nav>
@@ -327,6 +346,25 @@
     <script src="{{ asset('js/datatables/datatables-simple-demo.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/litepicker/dist/bundle.js" crossorigin="anonymous"></script>
     <script src="{{ asset('js/litepicker.js') }}"></script>
+    <script>
+        $(function() {
+            $(document).on('click', '.logout-trigger', function() {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Are you sure you want to log out?',
+                    text: 'You will need to sign in again to access the dashboard.',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, log out',
+                    cancelButtonText: 'Cancel',
+                    confirmButtonColor: '#d33',
+                }).then(function(result) {
+                    if (result.isConfirmed) {
+                        $('#logoutForm').trigger('submit');
+                    }
+                });
+            });
+        });
+    </script>
     @stack('scripts')
 </body>
 

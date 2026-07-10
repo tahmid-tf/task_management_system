@@ -11,6 +11,7 @@ use App\Models\TaskComment;
 use App\Models\TaskLabel;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -73,11 +74,10 @@ class TaskController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        return view('admin.tasks.table', [
-            'tasks'      => $tasks,
-            'statuses'   => self::STATUSES,
-            'priorities' => self::PRIORITIES,
-        ]);
+        return view('admin.tasks.table', array_merge(
+            ['tasks' => $tasks],
+            $this->formPayload()
+        ));
     }
 
     public function archived(Request $request): View
@@ -93,11 +93,11 @@ class TaskController extends Controller
         ]);
     }
 
-    public function create(Request $request): View
+    public function create(Request $request): RedirectResponse
     {
-        return view('admin.tasks.create', $this->formPayload([
-            'task' => null,
-        ]));
+        return redirect()->route('admin.tasks.board', [
+            'create_task' => 1,
+        ]);
     }
 
     public function store(Request $request): JsonResponse|\Illuminate\Http\RedirectResponse
