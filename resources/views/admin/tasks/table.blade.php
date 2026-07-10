@@ -148,6 +148,16 @@
             $('#createTaskForm').on('submit', function (e) {
                 e.preventDefault();
 
+                const form = $(this);
+                const submitButton = form.find('.js-task-submit');
+                const originalLabel = submitButton.data('original-label') || submitButton.text().trim();
+                const loadingLabel = submitButton.data('loading-label') || 'Creating...';
+
+                submitButton
+                    .data('original-label', originalLabel)
+                    .prop('disabled', true)
+                    .html(`<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>${loadingLabel}`);
+
                 $.ajax({
                     url: '{{ route('admin.tasks.store') }}',
                     method: 'POST',
@@ -165,6 +175,11 @@
                     },
                     error: function (xhr) {
                         Swal.fire('Error', xhr.responseJSON?.message || 'Unable to create task.', 'error');
+                    },
+                    complete: function () {
+                        submitButton
+                            .prop('disabled', false)
+                            .html(submitButton.data('original-label') || originalLabel);
                     }
                 });
             });

@@ -29,7 +29,9 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">{{ $submitLabel }}</button>
+                    <button type="submit" class="btn btn-primary js-task-submit" data-loading-label="Creating...">
+                        {{ $submitLabel }}
+                    </button>
                 </div>
             </form>
         </div>
