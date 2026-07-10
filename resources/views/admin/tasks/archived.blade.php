@@ -2,8 +2,7 @@
 
 @section('content')
     @php
-        $canManageTasks = auth()->user()?->hasAnyRole(['Admin', 'Team Member']);
-        $canDeleteTasks = auth()->user()?->hasRole('Admin');
+        $isAdmin = $isAdmin ?? auth()->user()?->hasRole('Admin');
     @endphp
 
     <div class="container-xl px-4 py-4">
@@ -57,11 +56,11 @@
                                         <div class="btn-group btn-group-sm">
                                             <button class="btn btn-outline-primary js-task-details"
                                                 data-id="{{ $task->id }}">View</button>
-                                            @if ($canManageTasks)
+                                            @if ($isAdmin)
                                                 <button class="btn btn-outline-success js-task-unarchive"
                                                     data-id="{{ $task->id }}">Unarchive</button>
                                             @endif
-                                            @if ($canDeleteTasks)
+                                            @if ($isAdmin)
                                                 <button class="btn btn-outline-danger js-task-delete"
                                                     data-id="{{ $task->id }}"
                                                     data-title="{{ $task->title }}">Delete</button>

@@ -1,10 +1,13 @@
 <?php
 namespace App\Http\Controllers\Admin;
 
+use App\Mail\UserStatusChangedMail;
+use App\Models\AppSetting;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -108,22 +111,39 @@ class UserController extends Controller
 
     public function toggleStatus(User $user): JsonResponse
     {
+        $currentUser = request()->user();
+
+        if ($currentUser && $currentUser->is($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot deactivate your own account.',
+            ], 403);
+        }
+
+        $nextStatus = $user->status === 'active' ? 'inactive' : 'active';
+
         $user->update([
-            'status' => $user->status === 'active' ? 'inactive' : 'active',
+            'status' => $nextStatus,
         ]);
+
+        $mailSent = $this->sendStatusChangeNotification($user, $nextStatus, $currentUser);
 
         return response()->json([
             'success' => true,
             'message' => sprintf(
-                'User %s successfully.',
-                $user->status === 'active' ? 'activated' : 'deactivated'
+                'User %s successfully.%s',
+                $nextStatus === 'active' ? 'activated' : 'deactivated',
+                $mailSent ? ' Notification email sent.' : ''
             ),
-            'status' => $user->status,
+            'status' => $nextStatus,
+            'mail_sent' => $mailSent,
         ]);
     }
 
     public function update(Request $request, User $user)
     {
+        $currentUser = $request->user();
+
         $validator = Validator::make($request->all(), [
             'name'     => ['required', 'string', 'max:255'],
             'email'    => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
@@ -145,6 +165,16 @@ class UserController extends Controller
         }
 
         $validated = $validator->validated();
+
+        if ($currentUser && $currentUser->is($user) && $validated['status'] === 'inactive') {
+            return back()
+                ->withErrors([
+                    'status' => 'You cannot deactivate your own account.',
+                ])
+                ->withInput();
+        }
+
+        $originalStatus = $user->status;
 
         if ($request->hasFile('image')) {
             if ($user->image) {
@@ -169,9 +199,36 @@ class UserController extends Controller
         $user->save();
         $user->syncRoles([$validated['role']]);
 
+        $mailSent = false;
+
+        if ($originalStatus !== $validated['status']) {
+            $mailSent = $this->sendStatusChangeNotification($user, $validated['status'], $currentUser);
+        }
+
         return redirect()
             ->route('admin.view-users')
-            ->with('success', 'User updated successfully.');
+            ->with('success', $mailSent ? 'User updated successfully. Status notification email sent.' : 'User updated successfully.');
+    }
+
+    private function sendStatusChangeNotification(User $user, string $status, ?User $changedBy = null): bool
+    {
+        if (! AppSetting::mailSystemEnabled()) {
+            return false;
+        }
+
+        try {
+            Mail::to($user->email)->send(new UserStatusChangedMail(
+                userName: $user->name,
+                status: $status,
+                changedBy: $changedBy?->name ?? 'System',
+            ));
+
+            return true;
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
+
+        return false;
     }
 
 }

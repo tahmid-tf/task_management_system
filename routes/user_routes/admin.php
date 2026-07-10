@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified', 'role:Admin'])->prefix('admin')->group(function () {
+Route::middleware(['auth', 'verified', 'active_account', 'role:Admin'])->prefix('admin')->group(function () {
     Route::get('/mail-center', [\App\Http\Controllers\Admin\MailCenterController::class, 'index'])->name('admin.mail-center.index');
     Route::post('/mail-center/delayed-all', [\App\Http\Controllers\Admin\MailCenterController::class, 'sendDelayedToAll'])->name('admin.mail-center.delayed-all');
     Route::post('/mail-center/delayed-user', [\App\Http\Controllers\Admin\MailCenterController::class, 'sendDelayedToUser'])->name('admin.mail-center.delayed-user');
@@ -21,7 +21,7 @@ Route::middleware(['auth', 'verified', 'role:Admin'])->prefix('admin')->group(fu
 
 });
 
-Route::middleware(['auth', 'verified', 'role:Admin|Team Member|Viewer'])->prefix('admin')->group(function () {
+Route::middleware(['auth', 'verified', 'active_account', 'role:Admin|Team Member|Viewer'])->prefix('admin')->group(function () {
     Route::get('/tasks', [\App\Http\Controllers\Admin\TaskController::class, 'index'])->name('admin.tasks.board');
     Route::get('/tasks/table', [\App\Http\Controllers\Admin\TaskController::class, 'table'])->name('admin.tasks.table');
     Route::get('/tasks/archived', [\App\Http\Controllers\Admin\TaskController::class, 'archived'])->name('admin.tasks.archived');
@@ -30,12 +30,15 @@ Route::middleware(['auth', 'verified', 'role:Admin|Team Member|Viewer'])->prefix
     Route::get('/tasks/{task}/details', [\App\Http\Controllers\Admin\TaskController::class, 'details'])->name('admin.tasks.details');
 
     Route::middleware(['role:Admin|Team Member'])->group(function () {
+        Route::patch('/tasks/{task}/move', [\App\Http\Controllers\Admin\TaskController::class, 'move'])->name('admin.tasks.move');
+        Route::patch('/tasks/reorder', [\App\Http\Controllers\Admin\TaskController::class, 'reorder'])->name('admin.tasks.reorder');
+    });
+
+    Route::middleware(['role:Admin'])->group(function () {
         Route::get('/tasks/create', [\App\Http\Controllers\Admin\TaskController::class, 'create'])->name('admin.tasks.create');
         Route::post('/tasks', [\App\Http\Controllers\Admin\TaskController::class, 'store'])->name('admin.tasks.store');
         Route::get('/tasks/{task}/edit', [\App\Http\Controllers\Admin\TaskController::class, 'edit'])->name('admin.tasks.edit');
         Route::put('/tasks/{task}', [\App\Http\Controllers\Admin\TaskController::class, 'update'])->name('admin.tasks.update');
-        Route::patch('/tasks/{task}/move', [\App\Http\Controllers\Admin\TaskController::class, 'move'])->name('admin.tasks.move');
-        Route::patch('/tasks/reorder', [\App\Http\Controllers\Admin\TaskController::class, 'reorder'])->name('admin.tasks.reorder');
         Route::patch('/tasks/{task}/archive', [\App\Http\Controllers\Admin\TaskController::class, 'archive'])->name('admin.tasks.archive');
         Route::patch('/tasks/{task}/unarchive', [\App\Http\Controllers\Admin\TaskController::class, 'unarchive'])->name('admin.tasks.unarchive');
         Route::post('/tasks/{task}/duplicate', [\App\Http\Controllers\Admin\TaskController::class, 'duplicate'])->name('admin.tasks.duplicate');
@@ -43,7 +46,6 @@ Route::middleware(['auth', 'verified', 'role:Admin|Team Member|Viewer'])->prefix
         Route::post('/tasks/{task}/attachments', [\App\Http\Controllers\Admin\TaskController::class, 'attachment'])->name('admin.tasks.attachments.store');
 
         Route::delete('/tasks/{task}', [\App\Http\Controllers\Admin\TaskController::class, 'destroy'])
-            ->middleware('role:Admin')
             ->name('admin.tasks.destroy');
 
         Route::get('/task-categories', [\App\Http\Controllers\Admin\TaskCategoryController::class, 'index'])->name('admin.task-categories.index');

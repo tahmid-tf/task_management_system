@@ -12,6 +12,7 @@ use App\Models\TaskCategory;
 use App\Models\TaskComment;
 use App\Models\TaskLabel;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -45,7 +46,10 @@ class TaskController extends Controller
     {
         $categories = TaskCategory::query()
             ->withCount([
-                'tasks as open_tasks_count' => fn ($query) => $query->whereNull('archived_at')->whereNull('deleted_at'),
+                'tasks as open_tasks_count' => function ($query) use ($request) {
+                    $query->whereNull('archived_at')->whereNull('deleted_at');
+                    $this->applyVisibilityScope($query, $request->user());
+                },
             ])
             ->orderBy('position')
             ->orderBy('name')
@@ -60,34 +64,38 @@ class TaskController extends Controller
             'boardTasks'         => $boardTasks,
             'statuses'           => self::STATUSES,
             'priorities'         => self::PRIORITIES,
-            'users'              => User::query()
-                ->where('status', 'active')
-                ->orderBy('name')
-                ->get(['id', 'name', 'email', 'image']),
+            'users'              => $this->isAdmin($request->user())
+                ? User::query()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'email', 'image'])
+                : collect(),
             'labels'             => TaskLabel::query()->orderBy('name')->get(['id', 'name', 'slug', 'color']),
             'summaryCounts'      => $this->summaryCounts($boardTasks),
             'querySearch'        => $request->string('q')->toString(),
+            'isAdmin'            => $this->isAdmin($request->user()),
+            'isTeamMember'       => $this->isTeamMember($request->user()),
         ]);
     }
 
     public function table(Request $request): View
     {
-        $tasks = Task::query()
+        $tasks = $this->visibleTasksQuery($request)
             ->with(['category', 'creator', 'assignee', 'labels'])
-            ->whereNull('archived_at')
             ->orderByDesc('assigned_at')
             ->orderByDesc('created_at')
             ->get();
 
         return view('admin.tasks.table', array_merge(
             ['tasks' => $tasks],
-            $this->formPayload()
+            $this->formPayload([
+                'canCreateTasks' => $this->isAdmin($request->user()),
+                'canChangeStatuses' => $this->canChangeTaskStatuses($request->user()),
+                'canManageTasks' => $this->isAdmin($request->user()),
+            ])
         ));
     }
 
     public function archived(Request $request): View
     {
-        $tasks = Task::query()
+        $tasks = $this->visibleTasksQuery($request, true)
             ->with(['category', 'creator', 'assignee', 'labels'])
             ->whereNotNull('archived_at')
             ->orderByDesc('archived_at')
@@ -95,11 +103,14 @@ class TaskController extends Controller
 
         return view('admin.tasks.archived', [
             'tasks' => $tasks,
+            'canViewActions' => $this->isAdmin($request->user()),
         ]);
     }
 
     public function create(Request $request): RedirectResponse
     {
+        abort_unless($this->isAdmin($request->user()), 403);
+
         return redirect()->route('admin.tasks.board', [
             'create_task' => 1,
         ]);
@@ -107,6 +118,8 @@ class TaskController extends Controller
 
     public function store(Request $request): JsonResponse|\Illuminate\Http\RedirectResponse
     {
+        abort_unless($this->isAdmin($request->user()), 403);
+
         $validated = $this->validateTask($request);
 
         $task = DB::transaction(function () use ($validated, $request) {
@@ -148,15 +161,30 @@ class TaskController extends Controller
             ->with('success', 'Task created successfully.');
     }
 
-    public function edit(Task $task): View
+    public function edit(Request $request, Task $task): View|JsonResponse
     {
+        abort_unless($this->isAdmin(auth()->user()), 403);
+
+        $task->load(['labels', 'attachments', 'assignee']);
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'html' => view('admin.tasks._edit-modal-content', $this->formPayload([
+                    'task' => $task,
+                ]))->render(),
+            ]);
+        }
+
         return view('admin.tasks.edit', $this->formPayload([
-            'task' => $task->load(['labels', 'attachments', 'assignee']),
+            'task' => $task,
         ]));
     }
 
     public function update(Request $request, Task $task): JsonResponse|\Illuminate\Http\RedirectResponse
     {
+        abort_unless($this->isAdmin($request->user()), 403);
+
         $validated = $this->validateTask($request, $task->id);
         $assignedTo = $validated['assigned_to'] ?? null;
         $assignedAt = $task->assigned_to != $assignedTo ? ($assignedTo ? now() : null) : $task->assigned_at;
@@ -184,6 +212,7 @@ class TaskController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Task updated successfully.',
+                'task'    => $this->taskPayload($task->load(['category', 'creator', 'assignee', 'labels'])),
             ]);
         }
 
@@ -196,6 +225,8 @@ class TaskController extends Controller
 
     public function details(Task $task): JsonResponse
     {
+        $this->ensureTaskVisibleToUser(request()->user(), $task);
+
         $task->load([
             'category',
             'creator',
@@ -214,6 +245,9 @@ class TaskController extends Controller
 
     public function move(Request $request, Task $task): JsonResponse
     {
+        abort_unless($this->canChangeTaskStatuses($request->user()), 403);
+        $this->ensureTaskVisibleToUser($request->user(), $task);
+
         $validated = $request->validate([
             'status'     => ['required', Rule::in(array_keys(self::STATUSES))],
             'position'   => ['required', 'integer', 'min:0'],
@@ -236,12 +270,16 @@ class TaskController extends Controller
 
     public function reorder(Request $request): JsonResponse
     {
+        abort_unless($this->canChangeTaskStatuses($request->user()), 403);
+
         $validated = $request->validate([
             'category_id'   => ['required', 'integer', Rule::exists('task_categories', 'id')],
             'columns'       => ['required', 'array'],
             'columns.*'     => ['array'],
             'columns.*.*'   => ['integer', Rule::exists('tasks', 'id')],
         ]);
+
+        $this->ensureTaskIdsVisibleToUser($request->user(), collect($validated['columns'])->flatten()->filter()->values()->all());
 
         DB::transaction(function () use ($validated) {
             foreach ($validated['columns'] as $status => $ids) {
@@ -262,6 +300,8 @@ class TaskController extends Controller
 
     public function archive(Task $task): JsonResponse
     {
+        abort_unless($this->isAdmin(auth()->user()), 403);
+
         $task->update([
             'archived_at' => now(),
         ]);
@@ -277,6 +317,8 @@ class TaskController extends Controller
 
     public function destroy(Task $task): JsonResponse
     {
+        abort_unless($this->isAdmin(auth()->user()), 403);
+
         DB::transaction(function () use ($task) {
             $task->delete();
             $this->logActivity($task, 'deleted', 'Task deleted.');
@@ -291,6 +333,8 @@ class TaskController extends Controller
 
     public function unarchive(Task $task): JsonResponse
     {
+        abort_unless($this->isAdmin(auth()->user()), 403);
+
         $task->update([
             'archived_at' => null,
         ]);
@@ -306,6 +350,8 @@ class TaskController extends Controller
 
     public function duplicate(Task $task): JsonResponse
     {
+        abort_unless($this->isAdmin(auth()->user()), 403);
+
         $copy = DB::transaction(function () use ($task) {
             $task->loadMissing('labels');
 
@@ -342,6 +388,8 @@ class TaskController extends Controller
 
     public function comment(Request $request, Task $task): JsonResponse
     {
+        abort_unless($this->isAdmin($request->user()), 403);
+
         $validated = $request->validate([
             'body' => ['required', 'string', 'max:5000'],
         ]);
@@ -368,6 +416,8 @@ class TaskController extends Controller
 
     public function attachment(Request $request, Task $task): JsonResponse
     {
+        abort_unless($this->isAdmin($request->user()), 403);
+
         $validated = $request->validate([
             'file' => ['required', 'file', 'max:10240'],
         ]);
@@ -450,10 +500,9 @@ class TaskController extends Controller
             return collect();
         }
 
-        return Task::query()
+        return $this->visibleTasksQuery(request())
             ->with(['category', 'creator', 'assignee', 'labels'])
             ->where('task_category_id', $categoryId)
-            ->whereNull('archived_at')
             ->when($search, fn ($query) => $query->where(function ($inner) use ($search) {
                 $inner->where('title', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%");
@@ -507,6 +556,67 @@ class TaskController extends Controller
                 'created_at' => $activity->created_at->format('M d, Y h:i A'),
             ])->values(),
         ];
+    }
+
+    private function visibleTasksQuery(Request $request, bool $includeArchived = false): Builder
+    {
+        $query = Task::query();
+
+        if ($includeArchived) {
+            $query->whereNotNull('archived_at');
+        } else {
+            $query->whereNull('archived_at');
+        }
+
+        return $this->applyVisibilityScope($query, $request->user());
+    }
+
+    private function applyVisibilityScope(Builder $query, ?User $user): Builder
+    {
+        if ($this->isTeamMember($user)) {
+            $query->where('assigned_to', $user->id);
+        }
+
+        return $query;
+    }
+
+    private function ensureTaskVisibleToUser(?User $user, Task $task): void
+    {
+        if ($this->isTeamMember($user) && (int) $task->assigned_to !== (int) $user->id) {
+            abort(403, 'You can only access your assigned tasks.');
+        }
+    }
+
+    private function ensureTaskIdsVisibleToUser(?User $user, array $taskIds): void
+    {
+        if (! $this->isTeamMember($user) || empty($taskIds)) {
+            return;
+        }
+
+        $visibleIds = Task::query()
+            ->whereIn('id', $taskIds)
+            ->where('assigned_to', $user->id)
+            ->pluck('id')
+            ->all();
+
+        if (count(array_diff($taskIds, $visibleIds)) > 0) {
+            abort(403, 'You can only reorder your assigned tasks.');
+        }
+    }
+
+    private function isAdmin(?User $user): bool
+    {
+        return (bool) $user?->hasRole('Admin');
+    }
+
+    private function isTeamMember(?User $user): bool
+    {
+        return (bool) $user?->hasRole('Team Member') && ! $user?->hasRole('Admin');
+    }
+
+    private function canChangeTaskStatuses(?User $user): bool
+    {
+        return $this->isAdmin($user) || $this->isTeamMember($user);
     }
 
     private function nextPosition(int $categoryId, string $status): int

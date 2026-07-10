@@ -15,10 +15,14 @@ class TaskExportController extends Controller
 {
     public function index(): View
     {
+        $user = auth()->user();
+
         return view('admin.tasks.export', [
-            'users' => User::query()
-                ->orderBy('name')
-                ->get(['id', 'name', 'email', 'status']),
+            'users' => $this->isAdmin($user)
+                ? User::query()->orderBy('name')->get(['id', 'name', 'email', 'status'])
+                : collect(),
+            'isTeamMember' => $this->isTeamMember($user),
+            'isAdmin' => $this->isAdmin($user),
         ]);
     }
 
@@ -51,13 +55,17 @@ class TaskExportController extends Controller
             ])->withInput();
         }
 
+        $user = $request->user();
+        $isTeamMember = $this->isTeamMember($user);
+
         $filters = [
             'mode'            => $validated['mode'],
             'date_from'       => $validated['date_from'] ?? null,
             'date_to'         => $validated['date_to'] ?? null,
-            'user_id'         => $validated['user_id'] ?? null,
+            'user_id'         => $isTeamMember ? $user->id : ($validated['user_id'] ?? null),
             'status'          => $validated['status'] ?? null,
             'include_archived'=> (bool) ($validated['archive'] ?? false),
+            'scope_to_user'   => $isTeamMember,
         ];
 
         $filename = match ($validated['mode']) {
@@ -68,5 +76,15 @@ class TaskExportController extends Controller
         };
 
         return Excel::download(new TasksExport($filters), $filename, ExcelWriter::XLSX);
+    }
+
+    private function isAdmin(?User $user): bool
+    {
+        return (bool) $user?->hasRole('Admin');
+    }
+
+    private function isTeamMember(?User $user): bool
+    {
+        return (bool) $user?->hasRole('Team Member') && ! $user?->hasRole('Admin');
     }
 }

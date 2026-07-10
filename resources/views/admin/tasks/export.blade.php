@@ -1,11 +1,13 @@
 @extends('layouts.admin')
 
 @section('content')
-    <div class="container-xl px-4 py-4">
+<div class="container-xl px-4 py-4">
         <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-4">
             <div>
                 <h1 class="mb-1">Export Tasks</h1>
-                <div class="text-muted">Download task data by date range, user, status, or full export.</div>
+                <div class="text-muted">
+                    {{ $isTeamMember ? 'Download your assigned tasks by date range or status.' : 'Download task data by date range, user, status, or full export.' }}
+                </div>
             </div>
             <div class="d-flex gap-2">
                 <a href="{{ route('admin.tasks.table') }}" class="btn btn-outline-primary">Back to Table</a>
@@ -48,6 +50,7 @@
                 </div>
             </div>
 
+            @if ($isAdmin)
             <div class="col-lg-6">
                 <div class="card shadow-sm h-100">
                     <div class="card-body">
@@ -72,6 +75,7 @@
                     </div>
                 </div>
             </div>
+            @endif
 
             <div class="col-lg-4">
                 <div class="card shadow-sm h-100">
@@ -109,5 +113,11 @@
                 </div>
             </div>
         </div>
+
+        @if ($isTeamMember)
+            <div class="alert alert-info mt-4 mb-0">
+                Team Members can export only the tasks assigned to them.
+            </div>
+        @endif
     </div>
 @endsection

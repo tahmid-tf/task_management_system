@@ -2,8 +2,9 @@
 
 @section('content')
     @php
-        $canManageTasks = auth()->user()?->hasAnyRole(['Admin', 'Team Member']);
-        $canDeleteTasks = auth()->user()?->hasRole('Admin');
+        $isAdmin = $isAdmin ?? auth()->user()?->hasRole('Admin');
+        $isTeamMember = $isTeamMember ?? auth()->user()?->hasRole('Team Member');
+        $canChangeStatuses = $isAdmin || $isTeamMember;
     @endphp
     <div class="container-xl px-4 py-4">
         <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-4">
@@ -13,7 +14,7 @@
             </div>
             <div class="d-flex gap-2">
                 <a href="{{ route('admin.tasks.table') }}" class="btn btn-outline-primary">Table View</a>
-                @if ($canManageTasks)
+                @if ($isAdmin)
                     <a href="{{ route('admin.task-categories.index') }}" class="btn btn-outline-secondary">Manage Categories</a>
                     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTaskModal">Create Task</button>
                 @endif
@@ -102,19 +103,17 @@
                                                 <div class="small text-muted mt-2">
                                                     Assigned by: {{ $task->creator?->name ?? 'Unknown' }}
                                                 </div>
-                                                @if ($canManageTasks)
+                                                @if ($isAdmin)
                                                     <div class="d-flex flex-wrap gap-2 mt-3">
                                                         <a href="{{ route('admin.tasks.edit', $task) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
                                                         <button type="button" class="btn btn-sm btn-outline-dark js-task-duplicate"
                                                             data-id="{{ $task->id }}">Duplicate</button>
                                                         <button type="button" class="btn btn-sm btn-outline-danger js-task-archive"
                                                             data-id="{{ $task->id }}">Archive</button>
-                                                        @if ($canDeleteTasks)
-                                                            <button type="button" class="btn btn-sm btn-outline-danger js-task-delete"
-                                                                data-id="{{ $task->id }}" data-title="{{ $task->title }}">
-                                                                Delete
-                                                            </button>
-                                                        @endif
+                                                        <button type="button" class="btn btn-sm btn-outline-danger js-task-delete"
+                                                            data-id="{{ $task->id }}" data-title="{{ $task->title }}">
+                                                            Delete
+                                                        </button>
                                                     </div>
                                                 @endif
                                             </div>
@@ -131,7 +130,7 @@
         @endif
     </div>
 
-    @if ($canManageTasks)
+    @if ($isAdmin)
         @include('admin.tasks._create-modal', [
             'modalId' => 'createTaskModal',
             'formId' => 'createTaskForm',
@@ -157,7 +156,8 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
     <script>
         $(function () {
-            const canManageTasks = @json($canManageTasks);
+            const canChangeStatuses = @json($canChangeStatuses);
+            const isAdmin = @json($isAdmin);
             $.ajaxSetup({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
@@ -165,7 +165,7 @@
                 }
             });
 
-            if (canManageTasks) {
+            if (canChangeStatuses) {
                 $('.task-column').each(function () {
                     new Sortable(this, {
                         group: 'tasks',
@@ -274,7 +274,7 @@
                                 <h4>${task.title}</h4>
                                 <p class="text-muted">${task.description || 'No description provided.'}</p>
                                 <div class="mb-3">${labels}</div>
-                                @if ($canManageTasks)
+                                @if ($isAdmin)
                                     <div class="card mb-3">
                                         <div class="card-body">
                                             <form class="js-comment-form" data-task-id="${task.id}">
@@ -298,7 +298,7 @@
                                 </div>
                                 <h6>Attachments</h6>
                                 <ul class="list-group mb-3">${attachments || '<li class="list-group-item text-muted">No attachments.</li>'}</ul>
-                                @if ($canManageTasks)
+                                @if ($isAdmin)
                                     <form class="js-attachment-form" data-task-id="${task.id}" enctype="multipart/form-data">
                                         <input type="file" name="file" class="form-control mb-2" required>
                                         <button class="btn btn-outline-primary btn-sm">Upload</button>
