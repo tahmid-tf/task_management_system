@@ -130,6 +130,15 @@
                 responsive: true,
                 autoWidth: false,
                 order: [],
+                columnDefs: [
+                    { targets: 0, responsivePriority: 1 },
+                    { targets: 7, responsivePriority: 1 },
+                    { targets: 2, responsivePriority: 2 },
+                    { targets: 3, responsivePriority: 3 },
+                    { targets: 4, responsivePriority: 4 },
+                    { targets: 5, responsivePriority: 5 },
+                    { targets: 6, responsivePriority: 6 },
+                ],
             });
 
             $('.js-task-status-change').each(function () {
@@ -264,7 +273,7 @@
                         }
                     }).done(function (response) {
                         select.data('previous', status);
-                        Swal.fire('Success', response.message, 'success');
+                        Swal.fire('Success', response.message, 'success').then(() => window.location.reload());
                     }).fail(function (xhr) {
                         select.val(select.data('previous') || select.find('option:first').val());
                         Swal.fire('Error', xhr.responseJSON?.message || 'Unable to change task status.', 'error');

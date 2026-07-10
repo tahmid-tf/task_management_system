@@ -97,6 +97,15 @@
                 responsive: true,
                 autoWidth: false,
                 order: [],
+                columnDefs: [
+                    { targets: 0, responsivePriority: 1 },
+                    { targets: 7, responsivePriority: 1 },
+                    { targets: 2, responsivePriority: 2 },
+                    { targets: 3, responsivePriority: 3 },
+                    { targets: 4, responsivePriority: 4 },
+                    { targets: 5, responsivePriority: 5 },
+                    { targets: 6, responsivePriority: 6 },
+                ],
             });
 
             $(document).on('click', '.js-task-details', function () {
