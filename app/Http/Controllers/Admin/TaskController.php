@@ -161,12 +161,23 @@ class TaskController extends Controller
             ->with('success', 'Task created successfully.');
     }
 
-    public function edit(Task $task): View
+    public function edit(Request $request, Task $task): View|JsonResponse
     {
         abort_unless($this->isAdmin(auth()->user()), 403);
 
+        $task->load(['labels', 'attachments', 'assignee']);
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'html' => view('admin.tasks._edit-modal-content', $this->formPayload([
+                    'task' => $task,
+                ]))->render(),
+            ]);
+        }
+
         return view('admin.tasks.edit', $this->formPayload([
-            'task' => $task->load(['labels', 'attachments', 'assignee']),
+            'task' => $task,
         ]));
     }
 
@@ -201,6 +212,7 @@ class TaskController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Task updated successfully.',
+                'task'    => $this->taskPayload($task->load(['category', 'creator', 'assignee', 'labels'])),
             ]);
         }
 

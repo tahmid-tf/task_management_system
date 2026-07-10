@@ -63,8 +63,8 @@
                                                 <button class="btn btn-outline-primary js-task-details"
                                                     data-id="{{ $task->id }}">View</button>
                                                 @if ($isAdmin)
-                                                    <a class="btn btn-outline-secondary"
-                                                        href="{{ route('admin.tasks.edit', $task) }}">Edit</a>
+                                                    <button class="btn btn-outline-secondary js-task-edit"
+                                                        data-id="{{ $task->id }}">Edit</button>
                                                     <button class="btn btn-outline-dark js-task-archive"
                                                         data-id="{{ $task->id }}">Archive</button>
                                                     <button class="btn btn-outline-danger js-task-delete"
@@ -112,6 +112,17 @@
         </div>
     </div>
 
+    <div class="modal fade" id="editTaskModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content" id="editTaskModalContent">
+                <div class="modal-body py-5 text-center">
+                    <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+                    <div class="mt-3 text-muted">Loading task editor...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @if ($isAdmin)
         @include('admin.tasks._create-modal', [
             'modalId' => 'createTaskModal',
@@ -139,6 +150,68 @@
                     { targets: 6, responsivePriority: 6 },
                 ],
             });
+
+            const formatStatusLabel = function (value) {
+                if (value === 'in_progress') {
+                    return 'In Progress';
+                }
+
+                if (value === 'todo') {
+                    return 'To Do';
+                }
+
+                if (value === 'done') {
+                    return 'Done';
+                }
+
+                if (value === 'backlog') {
+                    return 'Backlog';
+                }
+
+                return value
+                    .replaceAll('_', ' ')
+                    .replace(/\b\w/g, function (letter) {
+                        return letter.toUpperCase();
+                    });
+            };
+
+            const escapeHtml = function (value) {
+                return $('<div>').text(value ?? '').html();
+            };
+
+            const updateTaskRow = function (task) {
+                const row = $(`tbody tr`).filter(function () {
+                    return $(this).find('.js-task-edit').data('id') == task.id;
+                }).first();
+
+                if (!row.length) {
+                    return;
+                }
+
+                row.find('td').eq(0).html(`
+                    <div class="fw-semibold">${escapeHtml(task.title)}</div>
+                    <div class="text-muted small">${escapeHtml(task.description ? task.description.substring(0, 80) : '')}</div>
+                `);
+                row.find('td').eq(1).text(task.category?.name || '-');
+                row.find('td').eq(2).html(`<span class="badge bg-secondary">${formatStatusLabel(task.status)}</span>`);
+                row.find('td').eq(3).html(`<span class="badge bg-info text-white">${escapeHtml(task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : '-')}</span>`);
+                row.find('td').eq(4).text(task.assignee?.name || '-');
+                row.find('td').eq(5).text(task.due_date || '-');
+                row.find('td').eq(6).html((task.labels || []).map(function (label) {
+                    return `<span class="badge me-1" style="background:${escapeHtml(label.color || '#6c757d')}">${escapeHtml(label.name)}</span>`;
+                }).join(''));
+
+                const deleteButton = row.find('.js-task-delete');
+                if (deleteButton.length) {
+                    deleteButton.data('title', task.title);
+                }
+
+                const statusSelect = row.find('.js-task-status-change');
+                if (statusSelect.length) {
+                    statusSelect.val(task.status);
+                    statusSelect.data('previous', task.status);
+                }
+            };
 
             $('.js-task-status-change').each(function () {
                 $(this).data('previous', $(this).val());
@@ -209,6 +282,64 @@
                 });
             });
 
+            $(document).on('click', '.js-task-edit', function () {
+                const taskId = $(this).data('id');
+                const modalElement = document.getElementById('editTaskModal');
+                const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+
+                $('#editTaskModalContent').html(`
+                    <div class="modal-body py-5 text-center">
+                        <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+                        <div class="mt-3 text-muted">Loading task editor...</div>
+                    </div>
+                `);
+
+                modal.show();
+
+                $.ajax({
+                    url: '{{ url('/admin/tasks') }}/' + taskId + '/edit',
+                    method: 'GET',
+                    dataType: 'json',
+                }).done(function (response) {
+                    $('#editTaskModalContent').html(response.html);
+                }).fail(function (xhr) {
+                    modal.hide();
+                    Swal.fire('Error', xhr.responseJSON?.message || 'Unable to load task editor.', 'error');
+                });
+            });
+
+            $(document).on('submit', '#editTaskForm', function (e) {
+                e.preventDefault();
+
+                const form = $(this);
+                const submitButton = form.find('.js-task-submit');
+                const originalLabel = submitButton.data('original-label') || submitButton.text().trim();
+                const loadingLabel = submitButton.data('loading-label') || 'Updating...';
+
+                submitButton
+                    .data('original-label', originalLabel)
+                    .prop('disabled', true)
+                    .html(`<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>${loadingLabel}`);
+
+                $.ajax({
+                    url: form.attr('action'),
+                    method: 'POST',
+                    data: new FormData(this),
+                    processData: false,
+                    contentType: false,
+                }).done(function (response) {
+                    updateTaskRow(response.task);
+                    bootstrap.Modal.getInstance(document.getElementById('editTaskModal'))?.hide();
+                    Swal.fire('Success', response.message || 'Task updated successfully.', 'success');
+                }).fail(function (xhr) {
+                    Swal.fire('Error', xhr.responseJSON?.message || 'Unable to update task.', 'error');
+                }).always(function () {
+                    submitButton
+                        .prop('disabled', false)
+                        .html(submitButton.data('original-label') || originalLabel);
+                });
+            });
+
             $(document).on('click', '.js-task-archive', function () {
                 const taskId = $(this).data('id');
                 Swal.fire({
@@ -264,6 +395,19 @@
                 const status = select.val();
                 const position = select.data('position');
                 const categoryId = select.data('category-id');
+                const originalStatus = select.data('previous') || select.find('option:first').val();
+
+                const statusBadgeHtml = function (value) {
+                    const label = value === 'in_progress'
+                        ? 'In Progress'
+                        : value === 'todo'
+                            ? 'To Do'
+                            : value === 'done'
+                                ? 'Done'
+                                : value;
+
+                    return `<span class="badge bg-secondary">${label}</span>`;
+                };
 
                 Swal.fire({
                     title: 'Change task status?',
@@ -273,24 +417,29 @@
                     confirmButtonText: 'Change'
                 }).then(function (result) {
                     if (!result.isConfirmed) {
-                        select.val(select.data('previous') || select.find('option:first').val());
+                        select.val(originalStatus);
                         return;
                     }
+
+                    select.prop('disabled', true);
 
                     $.ajax({
                         url: '{{ url('/admin/tasks') }}/' + taskId + '/move',
                         method: 'PATCH',
                         data: {
                             status: status,
-                            position: position,
-                            category_id: categoryId
+                        position: position,
+                        category_id: categoryId
                         }
                     }).done(function (response) {
                         select.data('previous', status);
-                        Swal.fire('Success', response.message, 'success').then(() => window.location.reload());
+                        select.closest('tr').find('td').eq(2).html(statusBadgeHtml(status));
+                        Swal.fire('Success', response.message, 'success');
                     }).fail(function (xhr) {
-                        select.val(select.data('previous') || select.find('option:first').val());
+                        select.val(originalStatus);
                         Swal.fire('Error', xhr.responseJSON?.message || 'Unable to change task status.', 'error');
+                    }).always(function () {
+                        select.prop('disabled', false);
                     });
                 });
             });
