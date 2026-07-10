@@ -273,7 +273,7 @@ class TaskController extends Controller
         abort_unless($this->canChangeTaskStatuses($request->user()), 403);
 
         $validated = $request->validate([
-            'category_id'   => ['required', 'integer', Rule::exists('task_categories', 'id')],
+            'category_id'   => ['nullable', 'integer', Rule::exists('task_categories', 'id')],
             'columns'       => ['required', 'array'],
             'columns.*'     => ['array'],
             'columns.*.*'   => ['integer', Rule::exists('tasks', 'id')],
@@ -485,28 +485,23 @@ class TaskController extends Controller
             return null;
         }
 
-        $category = null;
-
         if ($request->filled('category')) {
-            $category = $categories->firstWhere('slug', $request->string('category')->toString());
+            return $categories->firstWhere('slug', $request->string('category')->toString());
         }
 
-        return $category ?? $categories->first();
+        return null;
     }
 
     private function boardTasks(?int $categoryId, string $search = ''): Collection
     {
-        if (! $categoryId) {
-            return collect();
-        }
-
         return $this->visibleTasksQuery(request())
             ->with(['category', 'creator', 'assignee', 'labels'])
-            ->where('task_category_id', $categoryId)
+            ->when($categoryId, fn ($query) => $query->where('task_category_id', $categoryId))
             ->when($search, fn ($query) => $query->where(function ($inner) use ($search) {
                 $inner->where('title', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%");
             }))
+            ->orderBy('task_category_id')
             ->orderBy('position')
             ->get()
             ->groupBy('status');

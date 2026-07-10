@@ -10,7 +10,10 @@
         <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-4">
             <div>
                 <h1 class="mb-1">Task Board</h1>
-                <div class="text-muted">Kanban board by category, with drag and drop ordering.</div>
+                <div class="text-muted">
+                    {{ $selectedCategory ? 'Kanban board for '.$selectedCategory->name.'.' : 'Kanban board for all active tasks.' }}
+                    Drag tasks between statuses to update progress.
+                </div>
             </div>
             <div class="d-flex gap-2">
                 <a href="{{ route('admin.tasks.table') }}" class="btn btn-outline-primary">Table View</a>
@@ -27,6 +30,11 @@
             </div>
         @else
             <div class="d-flex flex-wrap gap-2 overflow-auto pb-3 mb-3 border-bottom">
+                <a href="{{ route('admin.tasks.board') }}"
+                    class="btn btn-sm {{ $selectedCategory ? 'btn-outline-primary' : 'btn-primary' }}">
+                    All Tasks
+                    <span class="badge bg-light text-dark ms-1">{{ $categories->sum('open_tasks_count') }}</span>
+                </a>
                 @foreach ($categories as $category)
                     <a href="{{ route('admin.tasks.board', ['category' => $category->slug]) }}"
                         class="btn btn-sm {{ $selectedCategory?->id === $category->id ? 'btn-primary' : 'btn-outline-primary' }}">
@@ -37,7 +45,9 @@
             </div>
 
             <form class="row g-2 align-items-end mb-4" method="GET" action="{{ route('admin.tasks.board') }}">
-                <input type="hidden" name="category" value="{{ $selectedCategory?->slug }}">
+                @if ($selectedCategory)
+                    <input type="hidden" name="category" value="{{ $selectedCategory->slug }}">
+                @endif
                 <div class="col-md-6">
                     <label class="form-label">Search</label>
                     <input type="text" name="q" value="{{ $querySearch }}" class="form-control"
@@ -47,7 +57,7 @@
                     <button class="btn btn-outline-primary w-100" type="submit">Filter</button>
                 </div>
                 <div class="col-md-2">
-                    <a href="{{ route('admin.tasks.board', ['category' => $selectedCategory?->slug]) }}"
+                    <a href="{{ $selectedCategory ? route('admin.tasks.board', ['category' => $selectedCategory->slug]) : route('admin.tasks.board') }}"
                         class="btn btn-light w-100">Reset</a>
                 </div>
             </form>
@@ -65,7 +75,7 @@
                             </div>
                             <div class="card-body p-2">
                                 <div class="task-column" style="min-height: 250px;" data-status="{{ $statusKey }}"
-                                    data-category="{{ $selectedCategory?->id }}">
+                                    data-category="{{ $selectedCategory?->id ?? '' }}">
                                     @forelse ($items as $task)
                                         <div class="task-card card mb-2 shadow-sm" data-id="{{ $task->id }}">
                                             <div class="card-body p-3">
@@ -101,6 +111,9 @@
                                                     @endif
                                                 </div>
                                                 <div class="small text-muted mt-2">
+                                                    Category: {{ $task->category?->name ?? '-' }}
+                                                </div>
+                                                <div class="small text-muted mt-1">
                                                     Assigned by: {{ $task->creator?->name ?? 'Unknown' }}
                                                 </div>
                                                 @if ($isAdmin)
@@ -191,7 +204,7 @@
                     url: '{{ route('admin.tasks.reorder') }}',
                     method: 'PATCH',
                     data: {
-                        category_id: '{{ $selectedCategory?->id }}',
+                        category_id: '{{ $selectedCategory?->id ?? '' }}',
                         columns: columns
                     }
                 }).fail(function (xhr) {
