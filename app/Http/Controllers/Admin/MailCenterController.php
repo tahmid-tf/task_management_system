@@ -35,10 +35,10 @@ class MailCenterController extends Controller
             ->count();
 
         return view('admin.mail-center.index', [
-            'activeUsers'       => $activeUsers,
-            'activeUserCount'   => $activeUsers->count(),
-            'usersWithDelays'   => $activeUsers->where('delayed_tasks_count', '>', 0)->count(),
-            'delayedTaskCount'   => $delayedTaskCount,
+            'activeUsers' => $activeUsers,
+            'activeUserCount' => $activeUsers->count(),
+            'usersWithDelays' => $activeUsers->where('delayed_tasks_count', '>', 0)->count(),
+            'delayedTaskCount' => $delayedTaskCount,
         ]);
     }
 
@@ -48,6 +48,10 @@ class MailCenterController extends Controller
             ->where('status', 'active')
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
+
+        if ($users->isEmpty()) {
+            return back()->with('error', 'No active users are available for delayed reminders.');
+        }
 
         $sent = 0;
         $skipped = 0;
@@ -75,18 +79,22 @@ class MailCenterController extends Controller
             } catch (Throwable $e) {
                 Log::warning('Failed to send delayed task mail.', [
                     'user_id' => $user->id,
-                    'email'   => $user->email,
-                    'error'   => $e->getMessage(),
+                    'email' => $user->email,
+                    'error' => $e->getMessage(),
                 ]);
 
                 $failed[] = $user->name;
             }
         }
 
-        $message = "Delayed task mails sent to {$sent} active user".($sent === 1 ? '' : 's').'.';
+        if ($sent === 0 && $failed === [] && $skipped > 0) {
+            $message = 'No delayed task reminders were sent because all active users were up to date.';
+        } else {
+            $message = "Delayed task mails sent to {$sent} active user".($sent === 1 ? '' : 's').'.';
 
-        if ($skipped > 0) {
-            $message .= " {$skipped} active user".($skipped === 1 ? '' : 's').' had no delayed tasks and were skipped.';
+            if ($skipped > 0) {
+                $message .= " {$skipped} active user".($skipped === 1 ? '' : 's').' had no delayed tasks and were skipped.';
+            }
         }
 
         if ($failed !== []) {
@@ -115,17 +123,26 @@ class MailCenterController extends Controller
             return back()->with('error', "{$user->name} currently has no delayed tasks.");
         }
 
-        Mail::to($user->email)->send(new UserMailNotification(
-            subjectLine: 'Delayed task reminder - '.config('app.name'),
-            heading: 'Your delayed task reminder',
-            intro: "Hello {$user->name}, the following tasks are currently overdue or delayed.",
-            tasks: $this->formatTasks($tasks),
-            customMessage: 'Please review the list below and take the next action needed.',
-            closingLine: 'Thank you.',
-        ));
+        try {
+            Mail::to($user->email)->send(new UserMailNotification(
+                subjectLine: 'Delayed task reminder - '.config('app.name'),
+                heading: 'Your delayed task reminder',
+                intro: "Hello {$user->name}, the following tasks are currently overdue or delayed.",
+                tasks: $this->formatTasks($tasks),
+                customMessage: 'Please review the list below and take the next action needed.',
+                closingLine: 'Thank you.',
+            ));
+        } catch (Throwable $e) {
+            Log::warning('Failed to send delayed task mail to a single user.', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $e->getMessage(),
+            ]);
 
-        return redirect()
-            ->route('admin.mail-center.index')
+            return back()->with('error', "Unable to send delayed task reminder to {$user->name}.");
+        }
+
+        return redirect()->route('admin.mail-center.index')
             ->with('success', "Delayed task reminder sent to {$user->name}.");
     }
 
@@ -142,17 +159,26 @@ class MailCenterController extends Controller
             ->where('status', 'active')
             ->firstOrFail();
 
-        Mail::to($user->email)->send(new UserMailNotification(
-            subjectLine: $validated['subject'],
-            heading: 'A message from the admin team',
-            intro: "Hello {$user->name},",
-            tasks: [],
-            customMessage: $validated['message'],
-            closingLine: 'Best regards, '.config('app.name'),
-        ));
+        try {
+            Mail::to($user->email)->send(new UserMailNotification(
+                subjectLine: $validated['subject'],
+                heading: 'A message from the admin team',
+                intro: "Hello {$user->name},",
+                tasks: [],
+                customMessage: $validated['message'],
+                closingLine: 'Best regards, '.config('app.name'),
+            ));
+        } catch (Throwable $e) {
+            Log::warning('Failed to send custom mail to a user.', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $e->getMessage(),
+            ]);
 
-        return redirect()
-            ->route('admin.mail-center.index')
+            return back()->with('error', "Unable to send custom mail to {$user->name}.");
+        }
+
+        return redirect()->route('admin.mail-center.index')
             ->with('success', "Custom mail sent to {$user->name}.");
     }
 
@@ -169,15 +195,17 @@ class MailCenterController extends Controller
 
     private function formatTasks(Collection $tasks): array
     {
-        return $tasks->map(static fn (Task $task) => [
-            'title'       => $task->title,
-            'description' => $this->formatMailDescription($task->description),
-            'category'    => $task->category?->name ?? 'No category',
-            'priority'    => ucfirst($task->priority),
-            'status'      => ucfirst(str_replace('_', ' ', $task->status)),
-            'due_date'    => optional($task->due_date)->format('M d, Y') ?? '-',
-            'assigned_by' => $task->creator?->name ?? 'System',
-        ])->values()->all();
+        return $tasks->map(function (Task $task) {
+            return [
+                'title' => $task->title,
+                'description' => $this->formatMailDescription($task->description),
+                'category' => $task->category?->name ?? 'No category',
+                'priority' => ucfirst($task->priority),
+                'status' => ucfirst(str_replace('_', ' ', $task->status)),
+                'due_date' => optional($task->due_date)->format('M d, Y') ?? '-',
+                'assigned_by' => $task->creator?->name ?? 'System',
+            ];
+        })->values()->all();
     }
 
     private function delayScope(Builder $query): void
@@ -189,13 +217,14 @@ class MailCenterController extends Controller
 
     private function formatMailDescription(?string $description): string
     {
-        return $description
-            ? Str::of($description)
-                ->replace("\r\n", "\n")
-                ->replace("\r", "\n")
-                ->replace('|', '¦')
-                ->trim()
-                ->toString()
-            : '-';
+        if ($description === null) {
+            return '-';
+        }
+
+        return Str::of($description)
+            ->replace("\r\n", "\n")
+            ->replace("\r", "\n")
+            ->trim()
+            ->toString();
     }
 }
