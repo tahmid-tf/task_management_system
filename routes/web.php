@@ -11,6 +11,10 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified', 'active_account'])
     ->name('dashboard');
 
+Route::get('/admin', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified', 'active_account', 'role:Admin'])
+    ->name('admin.dashboard');
+
 require __DIR__ . '/auth.php';
 require __DIR__ . '/profile.php';
 require __DIR__ . '/user_routes/admin.php';
