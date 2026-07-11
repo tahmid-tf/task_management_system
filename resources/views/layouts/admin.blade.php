@@ -160,7 +160,7 @@
                 <div class="container-xl px-4">
                     <div class="row">
                         <div class="col-md-6 small">
-                            Copyright &copy; Your Website 2021
+                            Copyright &copy; Tahmid Ferdous
                         </div>
                         <div class="col-md-6 text-md-end small">
                             <a href="#!">Privacy Policy</a>

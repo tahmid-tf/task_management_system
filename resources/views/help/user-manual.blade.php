@@ -185,6 +185,7 @@
             </div>
         </section>
 
+        <br>
         <div class="container-xl px-4 mt-n4 pb-4">
             <div class="row g-4">
                 <div class="col-xl-3">
@@ -449,6 +450,10 @@
                             </div>
                         </div>
                     </section>
+
+                    <div class="manual-copyright mt-4">
+                        Copyright &copy; Tahmid Ferdous
+                    </div>
                 </div>
             </div>
         </div>
@@ -472,6 +477,24 @@
                 linear-gradient(135deg, rgba(15, 118, 110, .05), rgba(255, 255, 255, 0) 44%),
                 linear-gradient(315deg, rgba(37, 99, 235, .05), rgba(255, 255, 255, 0) 36%);
             pointer-events: none;
+        }
+
+        .manual-shell>.manual-hero {
+            margin-left: clamp(1.5rem, 3vw, 2.5rem) !important;
+            margin-right: clamp(1.5rem, 3vw, 2.5rem) !important;
+        }
+
+        .manual-shell>.manual-hero>.manual-hero-copy {
+            padding-left: clamp(1.75rem, 3vw, 4rem) !important;
+            padding-right: clamp(1.75rem, 3vw, 4rem) !important;
+            padding-top: clamp(3rem, 4vw, 4.25rem) !important;
+            padding-bottom: clamp(3rem, 4vw, 4rem) !important;
+        }
+
+        .manual-shell>.container-xl {
+            padding-left: clamp(1.75rem, 3vw, 4rem) !important;
+            padding-right: clamp(1.75rem, 3vw, 4rem) !important;
+            padding-top: 1.25rem;
         }
 
         .manual-hero {
@@ -605,7 +628,7 @@
         }
 
         .manual-section-body {
-            padding: 1.25rem;
+            padding: 1.75rem;
         }
 
         .manual-step,
@@ -758,6 +781,17 @@
 
         .manual-swatch.danger {
             background: #ef4444;
+        }
+
+        .manual-copyright {
+            border-radius: 1rem;
+            border: 1px solid #dfe7f1;
+            background: rgba(255, 255, 255, .92);
+            box-shadow: 0 14px 30px rgba(23, 32, 51, .05);
+            color: #627084;
+            font-weight: 700;
+            text-align: center;
+            padding: 1rem 1.25rem;
         }
 
         @media (max-width: 991px) {
