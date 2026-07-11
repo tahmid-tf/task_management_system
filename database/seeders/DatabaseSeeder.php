@@ -39,11 +39,11 @@ class DatabaseSeeder extends Seeder
         $adminUser->assignRole($adminRole);
 
         $teamMemberUser = User::updateOrCreate([
-            'email' => 'team63@dipti.com.bd',
+            'email' => 'zozobozo1001@gmail.com',
         ], [
             'name'              => 'Tahmid Ferdous 2',
             'phone'             => '01800000000',
-            'address'           => 'Chattogram, Bangladesh',
+            'address'           => 'Faridpur, Bangladesh',
             'status'            => 'active',
             'password'          => '12345678',
             'email_verified_at' => now(),
@@ -77,66 +77,66 @@ class DatabaseSeeder extends Seeder
             );
         });
 
-        $generalCategory = TaskCategory::where('slug', 'general')->first();
+        $generalCategory     = TaskCategory::where('slug', 'general')->first();
         $developmentCategory = TaskCategory::where('slug', 'development')->first();
-        $operationsCategory = TaskCategory::where('slug', 'operations')->first();
+        $operationsCategory  = TaskCategory::where('slug', 'operations')->first();
 
         $seedTasks = [
             [
-                'title' => 'Prepare weekly dashboard summary',
-                'description' => 'Collect task activity, highlight blockers, and prepare the weekly status snapshot for leadership.',
+                'title'            => 'Prepare weekly dashboard summary',
+                'description'      => 'Collect task activity, highlight blockers, and prepare the weekly status snapshot for leadership.',
                 'task_category_id' => $generalCategory?->id,
-                'assigned_to' => $teamMemberUser->id,
-                'status' => 'todo',
-                'priority' => 'medium',
-                'due_date' => Carbon::today()->addDays(3),
-                'estimated_time' => 4,
-                'actual_time' => 1,
-                'labels' => ['Urgent', 'Documentation'],
-                'comment' => 'Please include overdue items and the completion trend.',
-                'activity' => 'Task prepared for weekly reporting.',
+                'assigned_to'      => $teamMemberUser->id,
+                'status'           => 'todo',
+                'priority'         => 'medium',
+                'due_date'         => Carbon::today()->addDays(3),
+                'estimated_time'   => 4,
+                'actual_time'      => 1,
+                'labels'           => ['Urgent', 'Documentation'],
+                'comment'          => 'Please include overdue items and the completion trend.',
+                'activity'         => 'Task prepared for weekly reporting.',
             ],
             [
-                'title' => 'Review login flow and inactive account handling',
-                'description' => 'Validate the login validation path, inactive redirects, and status-change email behavior.',
+                'title'            => 'Review login flow and inactive account handling',
+                'description'      => 'Validate the login validation path, inactive redirects, and status-change email behavior.',
                 'task_category_id' => $developmentCategory?->id,
-                'assigned_to' => $adminUser->id,
-                'status' => 'in_progress',
-                'priority' => 'high',
-                'due_date' => Carbon::today()->subDay(),
-                'estimated_time' => 6,
-                'actual_time' => 2.5,
-                'labels' => ['Backend'],
-                'comment' => 'The inactive-account experience should stay clear and immediate.',
-                'activity' => 'Review started for authentication flow.',
+                'assigned_to'      => $adminUser->id,
+                'status'           => 'in_progress',
+                'priority'         => 'high',
+                'due_date'         => Carbon::today()->subDay(),
+                'estimated_time'   => 6,
+                'actual_time'      => 2.5,
+                'labels'           => ['Backend'],
+                'comment'          => 'The inactive-account experience should stay clear and immediate.',
+                'activity'         => 'Review started for authentication flow.',
             ],
             [
-                'title' => 'Resolve export formatting feedback',
-                'description' => 'Fine-tune spreadsheet styling, priority colors, and autosized columns for stakeholder review.',
+                'title'            => 'Resolve export formatting feedback',
+                'description'      => 'Fine-tune spreadsheet styling, priority colors, and autosized columns for stakeholder review.',
                 'task_category_id' => $operationsCategory?->id,
-                'assigned_to' => $teamMemberUser->id,
-                'status' => 'done',
-                'priority' => 'low',
-                'due_date' => Carbon::today()->subDays(2),
-                'estimated_time' => 3,
-                'actual_time' => 2,
-                'labels' => ['Frontend', 'Documentation'],
-                'comment' => 'Export formatting is ready for final sign-off.',
-                'activity' => 'Export feedback task completed.',
+                'assigned_to'      => $teamMemberUser->id,
+                'status'           => 'done',
+                'priority'         => 'low',
+                'due_date'         => Carbon::today()->subDays(2),
+                'estimated_time'   => 3,
+                'actual_time'      => 2,
+                'labels'           => ['Frontend', 'Documentation'],
+                'comment'          => 'Export formatting is ready for final sign-off.',
+                'activity'         => 'Export feedback task completed.',
             ],
             [
-                'title' => 'Audit overdue tasks and send reminders',
-                'description' => 'Review overdue work, confirm assignees, and trigger delayed task reminders for active users.',
+                'title'            => 'Audit overdue tasks and send reminders',
+                'description'      => 'Review overdue work, confirm assignees, and trigger delayed task reminders for active users.',
                 'task_category_id' => $operationsCategory?->id,
-                'assigned_to' => $teamMemberUser->id,
-                'status' => 'backlog',
-                'priority' => 'critical',
-                'due_date' => Carbon::today()->subDays(4),
-                'estimated_time' => 5,
-                'actual_time' => 0,
-                'labels' => ['Urgent', 'Backend'],
-                'comment' => 'This one should be highlighted in the Alert Center.',
-                'activity' => 'Overdue task queued for reminder workflow.',
+                'assigned_to'      => $teamMemberUser->id,
+                'status'           => 'backlog',
+                'priority'         => 'critical',
+                'due_date'         => Carbon::today()->subDays(4),
+                'estimated_time'   => 5,
+                'actual_time'      => 0,
+                'labels'           => ['Urgent', 'Backend'],
+                'comment'          => 'This one should be highlighted in the Alert Center.',
+                'activity'         => 'Overdue task queued for reminder workflow.',
             ],
         ];
 
@@ -161,7 +161,7 @@ class DatabaseSeeder extends Seeder
 
             $task->labels()->sync(
                 $labels
-                    ->filter(fn (TaskLabel $label) => in_array($label->name, $seedTask['labels'], true))
+                    ->filter(fn(TaskLabel $label) => in_array($label->name, $seedTask['labels'], true))
                     ->pluck('id')
                     ->values()
                     ->all()
