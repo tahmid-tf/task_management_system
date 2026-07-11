@@ -2,7 +2,14 @@
 
 Task Management Admin is a polished Laravel 13 workspace for managing users, tasks, roles, mail workflows, exports, and reporting from a single admin panel. The application is built for day-to-day operations and focuses on a clean user experience, role-based access, and fast AJAX-driven interactions.
 
+![Task Management Admin Screenshot](public/assets/gimg/task_management_software.png)
+
 This README reflects the current codebase only.
+
+## Test Login Credentials
+
+- Email: tahmid.tf1@gmail.com
+- Password: 12345678
 
 ## Overview
 
