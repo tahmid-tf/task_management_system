@@ -8,6 +8,7 @@
             $isMailCenterActive = request()->routeIs('admin.mail-center.*');
             $isMailSystemActive = request()->routeIs('admin.mail-system.*');
             $mailSystemEnabled = \App\Models\AppSetting::mailSystemEnabled();
+            $isManualActive = request()->routeIs('admin.user-manual');
             $isExportActive = request()->routeIs('admin.tasks.export*');
             $isUsersActive = request()->routeIs(
                 'admin.add-user',
@@ -26,6 +27,11 @@
         <a class="nav-link {{ $isDashboardActive ? 'active' : '' }}" href="{{ route('dashboard') }}">
             <div class="nav-link-icon"><i data-feather="bar-chart"></i></div>
             Dashboard
+        </a>
+
+        <a class="nav-link {{ $isManualActive ? 'active' : '' }}" href="{{ route('admin.user-manual') }}">
+            <div class="nav-link-icon"><i data-feather="book-open"></i></div>
+            User Manual
         </a>
 
         @if ($isAdmin)
@@ -79,6 +85,10 @@
                 <a class="nav-link {{ request()->routeIs('admin.tasks.board') ? 'active' : '' }}"
                     href="{{ route('admin.tasks.board') }}">
                     Board
+                </a>
+                <a class="nav-link {{ request()->routeIs('admin.tasks.calendar') ? 'active' : '' }}"
+                    href="{{ route('admin.tasks.calendar') }}">
+                    Calendar
                 </a>
                 <a class="nav-link {{ request()->routeIs('admin.tasks.table') ? 'active' : '' }}"
                     href="{{ route('admin.tasks.table') }}">

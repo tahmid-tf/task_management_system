@@ -22,7 +22,10 @@ Route::middleware(['auth', 'verified', 'active_account', 'role:Admin'])->prefix(
 });
 
 Route::middleware(['auth', 'verified', 'active_account', 'role:Admin|Team Member|Viewer'])->prefix('admin')->group(function () {
+    Route::view('/user-manual', 'help.user-manual')->name('admin.user-manual');
+
     Route::get('/tasks', [\App\Http\Controllers\Admin\TaskController::class, 'index'])->name('admin.tasks.board');
+    Route::get('/tasks/calendar', [\App\Http\Controllers\Admin\TaskCalendarController::class, 'index'])->name('admin.tasks.calendar');
     Route::get('/tasks/table', [\App\Http\Controllers\Admin\TaskController::class, 'table'])->name('admin.tasks.table');
     Route::get('/tasks/archived', [\App\Http\Controllers\Admin\TaskController::class, 'archived'])->name('admin.tasks.archived');
     Route::get('/tasks/export', [\App\Http\Controllers\Admin\TaskExportController::class, 'index'])->name('admin.tasks.export');

@@ -14,6 +14,7 @@
             </div>
             <div class="d-flex gap-2">
                 <a href="{{ route('admin.tasks.board') }}" class="btn btn-outline-primary">Board View</a>
+                <a href="{{ route('admin.tasks.calendar') }}" class="btn btn-outline-primary">Calendar View</a>
                 @if ($isAdmin)
                     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTaskModal">
                         Create Task
